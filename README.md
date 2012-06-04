@@ -1,5 +1,7 @@
+ 
  Installing
  ==========
+
  ```
  gem install vagrant-windows
  ```
@@ -51,6 +53,7 @@ Vagrant::Config.run do |config|
   end
 
 end
+````
 
 What Works?
 ===========
