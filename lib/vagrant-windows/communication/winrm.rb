@@ -104,7 +104,7 @@ module Vagrant
         rescue ::WinRM::WinRMAuthorizationError => error
           raise ::WinRM::WinRMAuthorizationError.new("#{error.message}@#{opts[:host]}")
         end
-        client.max_env_size 32768
+
         client
       end
       
