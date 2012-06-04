@@ -4,7 +4,6 @@ require 'vagrant-windows/guest/windows'
 #Add Configuration Items
 require 'vagrant-windows/config/windows'
 require 'vagrant-windows/config/winrm'
-require 'vagrant-windows/config/default'
 
 # Add WinRM Communication Channel
 require 'vagrant-windows/communication/winrm'

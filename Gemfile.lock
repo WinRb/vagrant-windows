@@ -1,3 +1,11 @@
+PATH
+  remote: .
+  specs:
+    vagrant-windows (0.0.1)
+      highline
+      vagrant (~> 1.0.3)
+      winrm (~> 1.1.1)
+
 GEM
   remote: http://rubygems.org/
   specs:
@@ -63,6 +71,4 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  highline
-  vagrant
-  winrm (~> 1.1.1)
+  vagrant-windows!

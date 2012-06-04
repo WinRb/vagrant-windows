@@ -16,7 +16,7 @@ module Vagrant
       end
 
       def validate(env, errors)
-        [ :winrm_user, :winrm_password, :host, :max_tries, :timeout].each do |field|
+        [ :winrm_user, :winrm_password].each do |field|
           errors.add(I18n.t("vagrant.config.common.error_empty", :field => field)) if !instance_variable_get("@#{field}".to_sym)
         end
       end

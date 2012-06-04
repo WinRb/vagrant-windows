@@ -1,6 +1,6 @@
 module Vagrant
   module Errors
-    class WINRMPortNotDetected < VagrantError
+    class WinRMPortNotDetected < VagrantError
       status_code(550)
       error_key(:winrm_port_not_detected)
     end
