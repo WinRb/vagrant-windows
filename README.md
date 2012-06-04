@@ -1,3 +1,9 @@
+ Installing
+ ==========
+ ```
+ gem install vagrant-windows
+ ```
+
  Building a Base Box
  ===================
  
