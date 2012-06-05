@@ -1,14 +1,16 @@
  
- Installing
- ==========
+Installing
+==========
 
  ```
  gem install vagrant-windows
  ```
 
- Building a Base Box
- ===================
- 
+Building a Base Box
+===================
+
+All Windows Machines
+-------------------- 
  -Enable WinRM
 
   ```
@@ -21,8 +23,12 @@
   - Create a vagrant user
     - For things to work out of the box, username and password should both be vagrant
 
-  - Turn off UAC
-  - Disable Shutdown Tracker
+  - Turn off UAC (Msconfig)
+  
+Servers
+--------
+  - Disable Shutdown Tracker (http://www.jppinto.com/2010/01/how-to-disable-the-shutdown-event-tracker-in-server-20032008/)
+  - Disable "Server Manager" Starting at login (http://www.elmajdal.net/win2k8/How_to_Turn_Off_The_Automatic_Display_of_Server_Manager_At_logon.aspx)
   
 The Vagrant File
 ================
@@ -66,6 +72,10 @@ What has not been tested
 - Shell and Puppet Provisioners 
   - Shell should work, though I have not vetted it yet.
 
+What does not work
+==================
+- Complex networking setups
+
 What Can I do to help?
 ======================
 1. Contribute Code (See Below)
@@ -82,6 +92,6 @@ Contributing
 
 References and Shout Outs
 =========================
-Chris McClimans - Vagrant Branch (https://github.com/hh/vagrant/blob/feature/winrm/)
-Dan Wanek - WinRM GEM (https://github.com/zenchild/WinRM)
-  +1 For being super responsive to pull requests.
+- Chris McClimans - Vagrant Branch (https://github.com/hh/vagrant/blob/feature/winrm/)
+-Dan Wanek - WinRM GEM (https://github.com/zenchild/WinRM)
+  - +1 For being super responsive to pull requests.
