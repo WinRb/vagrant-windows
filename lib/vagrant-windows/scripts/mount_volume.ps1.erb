@@ -31,8 +31,8 @@ $BaseDirectory = [System.IO.Path]::GetDirectoryName($MountPoint)
 
 if (-not (Test-Path $BaseDirectory))
 {
-  Write-Host "Creating parent directory for mount point"
-  mkdir $BaseDirectory
+  Write-Host "Creating parent directory for mount point $BaseDirectory"
+  New-Item $BaseDirectory -Type Directory -Force | Out-Null
 }
 
 cmd /c mklink /D "$MountPoint" "\\vboxsrv\$ShareName"
