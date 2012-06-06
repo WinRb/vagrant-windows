@@ -24,6 +24,7 @@ All Windows Machines
     - For things to work out of the box, username and password should both be vagrant
 
   - Turn off UAC (Msconfig)
+  - Disable complex passwords
   
 Servers
 --------
