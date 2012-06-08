@@ -59,50 +59,33 @@ module Vagrant
       end
 
       def configure_networks(networks)
-        raise NotImplementedError, "Advanced Networking is not supported"
-        # First, remove any previous network modifications
-        # from the interface file.
-        #vm.channel.sudo("sed -e '/^#VAGRANT-BEGIN/,/^#VAGRANT-END/ d' /etc/network/interfaces > /tmp/vagrant-network-interfaces")
-        #vm.channel.sudo("su -c 'cat /tmp/vagrant-network-interfaces > /etc/network/interfaces'")
-        #vm.channel.sudo("rm /tmp/vagrant-network-interfaces")
+        ### HACK!!!!! 
+        Nori.advanced_typecasting = false
+        if driver_mac_address = @vm.driver.read_mac_addresses
+          driver_mac_address = driver_mac_address.invert
+        end
 
-        # Accumulate the configurations to add to the interfaces file as
-        # well as what interfaces we're actually configuring since we use that
-        # later.
-        #interfaces = Set.new
-        #entries = []
-        #networks.each do |network|
-        #  interfaces.add(network[:interface])
-        #  entry = TemplateRenderer.render("guests/debian/network_#{network[:type]}",
-        #                                  :options => network)
+        vm_interface_map = {}
+        @vm.channel.session.wql("SELECT * FROM Win32_NetworkAdapter WHERE NetConnectionStatus=2")[:win32_network_adapter].each do |nic|
+          naked_mac = nic[:mac_address].gsub(':','')
+          if driver_mac_address[naked_mac]
+            vm_interface_map[driver_mac_address[naked_mac]] = { :name => nic[:net_connection_id], :mac_address => naked_mac, :index => nic[:interface_index] }
+          end
+        end
+        puts networks
+        puts vm_interface_map
+        networks.each do |network|
+          if network[:type].to_sym == :static
+              vm.channel.execute("netsh interface ip set address \"#{vm_interface_map[network[:interface]+1][:name]}\" static #{network[:ip]} #{network[:netmask]}")
+          elsif network[:type].to_sym == :dhcp
+            vm.channel.execute("netsh interface ip set address \"#{vm_interface_map[network[:interface]+1][:name]}\" dhcp")
+          end
+        end
 
-        #  entries << entry
-        #end
-
-        # Perform the careful dance necessary to reconfigure
-        # the network interfaces
-        #temp = Tempfile.new("vagrant")
-        #temp.binmode
-        #temp.write(entries.join("\n"))
-        #temp.close
-
-        #vm.channel.upload(temp.path, "/tmp/vagrant-network-entry")
-
-        # Bring down all the interfaces we're reconfiguring. By bringing down
-        # each specifically, we avoid reconfiguring eth0 (the NAT interface) so
-        # SSH never dies.
-        #interfaces.each do |interface|
-        #  vm.channel.sudo("/sbin/ifdown eth#{interface} 2> /dev/null")
-        #end
-
-        #vm.channel.sudo("cat /tmp/vagrant-network-entry >> /etc/network/interfaces")
-        #vm.channel.sudo("rm /tmp/vagrant-network-entry")
-
-        # Bring back up each network interface, reconfigured
-        #interfaces.each do |interface|
-        #  vm.channel.sudo("/sbin/ifup eth#{interface}")
-        #end
+        #netsh interface ip set address name="Local Area Connection" static 192.168.0.100 255.255.255.0 192.168.0.1 1
+        
       end
+
 
       def windows_path(path)
         p = ''
