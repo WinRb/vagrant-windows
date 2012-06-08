@@ -75,7 +75,8 @@ What has not been tested
 
 What does not work
 ==================
-- Complex networking setups
+- <s>Complex networking setups</s> - Fixed in 0.0.3
+  - Note that I have not tested the Virtual Box 4.0 Driver, all _should_ work. Can someone please confirm?
 
 What Can I do to help?
 ======================
