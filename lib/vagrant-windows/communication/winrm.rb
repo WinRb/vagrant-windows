@@ -37,7 +37,7 @@ module Vagrant
         # If we reached this point then we successfully connected
         logger.info("WinRM is ready!")
         true
-      rescue Timeout::Error => e
+      rescue Timeout::Error, HTTPClient::KeepAliveDisconnected => e
         #, Errors::SSHConnectionRefused, Net::SSH::Disconnect => e
         # The above errors represent various reasons that WinRM may not be
         # ready yet. Return false.
@@ -169,14 +169,17 @@ module Vagrant
           end
         else
           raise Vagrant::Errors::WinRMInvalidShell, "#{shell} is not a valid type of shell"
-        end   
+        end
+
         
         exit_status = output[:exitcode]
         logger.debug exit_status.inspect
 
         # Return the final exit status
         return exit_status
-      end
+      rescue ::WinRM::WinRMHTTPTransportError => e
+          raise Vagrant::Errors::WinRMTimeout, e.message
+      end  
     end
   end
 end
