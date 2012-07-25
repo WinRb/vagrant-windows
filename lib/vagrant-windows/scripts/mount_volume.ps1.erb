@@ -4,8 +4,14 @@ function Test-ReparsePoint([string]$path) {
   return [bool]($file.Attributes -band [IO.FileAttributes]::ReparsePoint)
 }
 
+
 $MountPoint = [System.IO.Path]::GetFullPath("<%= options[:mount_point] %>")
 $ShareName = "<%= options[:name] %>"
+
+# https://github.com/BIAINC/vagrant-windows/issues/4
+# Not sure why this works, but it does.
+
+& net use $ShareName
 
 Write-Host "Attempting to mount $ShareName to $MountPoint"
 if( (Test-Path "$MountPoint") -and (Test-ReparsePoint "$MountPoint") )

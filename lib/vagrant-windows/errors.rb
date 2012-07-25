@@ -13,5 +13,10 @@ module Vagrant
       status_code(552)
       error_key(:winrm_upload_error)
     end
+    class WinRMTimeout < VagrantError
+      status_code(553)
+      error_key(:winrm_timeout)
+    end
+
   end
 end
