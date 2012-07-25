@@ -93,10 +93,12 @@ module Vagrant
           :pass => vm.config.winrm.password,
           :host => vm.config.winrm.host,
           :port => vm.winrm.info[:port],
+          :operation_timeout => vm.config.winrm.timeout,
           :basic_auth_only => true
         }.merge ({})
 
         # create a session
+        logger.info("Attempting WinRM session with options: #{opts}")
         begin
           endpoint = "http://#{opts[:host]}:#{opts[:port]}/wsman"
           client = ::WinRM::WinRMWebService.new(endpoint, :plaintext, opts)

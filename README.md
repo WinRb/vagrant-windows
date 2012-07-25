@@ -47,6 +47,11 @@ Example:
 ```ruby
 Vagrant::Config.run do |config|
 
+  #The following timeout configuration is option, however if have
+  #any large remote_file resources in your chef recipes, you may
+  #experience timeouts (reported as 500 responses)
+  config.winrm.timeout = 1800     #Set WinRM Timeout in seconds (Default 30)
+
   # Configure base box parameters
   config.vm.box = "windows2008r2"
   config.vm.box_url = "./windows-2008-r2.box"
