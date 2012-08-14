@@ -1,7 +1,6 @@
 require 'timeout'
 
 require 'log4r'
-#require 'em-winrm'
 require 'winrm'
 require 'highline'
 
@@ -128,6 +127,8 @@ module Vagrant
 
       def upload(from, to)
         file = "winrm-upload-#{rand()}"
+        # enforce proper path syntax in target file
+        to.gsub!('/','\\')
         file_name = (session.cmd("echo %TEMP%\\#{file}"))[:data][0][:stdout].chomp
         session.powershell <<-EOH
           if(Test-Path #{to})
@@ -146,6 +147,14 @@ module Vagrant
           [System.IO.File]::WriteAllBytes($new_file,$bytes)
         EOH
       end
+
+    # WMI call
+    def wmi(wql)
+      logger.info("WMI call: #{wql}")
+      result = session.run_wql(wql)
+      logger.info("WMI result: #{result.inspect}")
+      return result
+    end
 
       protected
 

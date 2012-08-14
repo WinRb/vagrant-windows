@@ -12,12 +12,26 @@ module Vagrant
 
       def change_host_name(name)
         #### on windows, renaming a computer seems to require a reboot
-        vm.channel.execute("wmic computersystem where name=\"%COMPUTERNAME%\" call rename name=\"#{name}\"")
+	@vm.channel.run_cmd("netdom renamecomputer %COMPUTERNAME% /force /reb:2 /newname:#{name.split('.')[0]}")
+        sleep @vm.config.windows.halt_check_interval
+	@vm.channel.execute("hostname")
       end
 
       # TODO: I am sure that ciphering windows versions will be important at some point
       def distro_dispatch
-        :windows
+        # current implementation of winrm just "runs a thing and returns the exit status."  there's no way to get stdout/stderr.
+        # this means that testing for versions has to happen remotely or you have to write the version out as a file and then pull it down.
+        # writing a bunch of remotely-executed WMI tests seems dumb, but it should be effective.
+        # however, on my host this code returns "invalid query" despite the fact that a copy/paste of the command works on the guest.
+        # need someone else to verify that this is, in fact, a code problem and not an issue with my environment.
+        begin
+          resp = @vm.channel.wmi("select * from Win32_OperatingSystem")[:xml_fragment][:win32_operating_system][0]
+          # resp is now a bucket that contains all the keys of Win32_OperatingSystem, which should get you architecture + build info.  good luck.
+       	  :windows2008r2 if resp[:version] == "6.1.7601" or resp[:caption] =~ /Microsoft Windows Server 2008 R2/
+          :windows
+        rescue
+          :windows
+        end
       end
 
       def halt
