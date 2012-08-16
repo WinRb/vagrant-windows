@@ -12,8 +12,9 @@ module Vagrant
 
       def change_host_name(name)
         #### on windows, renaming a computer seems to require a reboot
-	@vm.channel.run_cmd("netdom renamecomputer %COMPUTERNAME% /force /reb:2 /newname:#{name.split('.')[0]}")
-        sleep @vm.config.windows.halt_check_interval
+	@vm.channel.session.cmd("netdom renamecomputer %COMPUTERNAME% /force /reb:2 /newname:#{name.split('.')[0]}")
+        # i know, i know...
+        sleep 15
 	@vm.channel.execute("hostname")
       end
 
@@ -25,11 +26,20 @@ module Vagrant
         # however, on my host this code returns "invalid query" despite the fact that a copy/paste of the command works on the guest.
         # need someone else to verify that this is, in fact, a code problem and not an issue with my environment.
         begin
-          resp = @vm.channel.wmi("select * from Win32_OperatingSystem")[:xml_fragment][:win32_operating_system][0]
+          resp = @vm.channel.wmi("select * from Win32_OperatingSystem")[:win32_operating_system][0]
+          @vm.ui.info "resp is #{resp.inspect}"
           # resp is now a bucket that contains all the keys of Win32_OperatingSystem, which should get you architecture + build info.  good luck.
-       	  :windows2008r2 if resp[:version] == "6.1.7601" or resp[:caption] =~ /Microsoft Windows Server 2008 R2/
-          :windows
-        rescue
+       	  if resp[:version] == "6.1.7601" or resp[:caption] =~ /Microsoft Windows Server 2008 R2/
+            :windows2008r2
+          elsif resp[:version] == "6.0." or resp[:caption] =~ /Microsoft Windows Server 2003/
+            :windows2003
+          else 
+            :windows
+          end
+        rescue => e
+          @vm.ui.warn "OS Detection Exception! #{resp}"
+          @vm.ui.warn e.message
+          @vm.ui.warn e.backtrace
           :windows
         end
       end
