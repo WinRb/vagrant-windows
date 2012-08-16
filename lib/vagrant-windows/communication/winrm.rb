@@ -117,11 +117,12 @@ module Vagrant
         @highline ||= HighLine.new
       end
       
+# this breaks a Jenkins plugin that scans for log events, so we're nerfing it.
       def print_data(data, color = :cyan)
         if data =~ /\n/
           data.split(/\n/).each { |d| print_data(d, color) }
         else
-          puts "#{h.color('winrm', color)} #{data.chomp}"
+          puts "#{data.chomp}"
         end
       end
 

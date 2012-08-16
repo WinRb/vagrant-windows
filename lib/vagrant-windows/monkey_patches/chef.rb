@@ -6,19 +6,19 @@ module Vagrant
       # done because I believe provisioning_path is a path on the guest.
       def initialize(env, config)
         super
-        config.provisioning_path ||= env[:vm].config.vm.guest == :windows ? "C:\\opscode\\chef" : "/tmp/vagrant-chef-#{get_and_update_counter(:provisioning_path)}"
+        config.provisioning_path ||= env[:vm].config.vm.guest == :windows ? "C:\\opscode\\chef" : "/etc/chef"
       end
 
       # done to use Windows-specific filename/pathing structure during
       # command execution but Ruby-style forward slashes in templates elsewhere.
       def setup_config(template, filename, template_vars)
         if env[:vm].config.vm.guest == :windows
-           tvars = Hash[template_vars.map{ |k,v| [k, v.gsub("\\",'/')] }]
+           tvars = Hash[template_vars.map{ |k,v| [k, v.class == String ? v.gsub("\\",'/') : v] }]
         else
            tvars = template_vars
         end
         config_file = TemplateRenderer.render(template, {
-          :log_level => :warn,
+          :log_level => :debug,
           :http_proxy => config.http_proxy,
           :http_proxy_user => config.http_proxy_user,
           :http_proxy_pass => config.http_proxy_pass,
@@ -28,8 +28,8 @@ module Vagrant
           :no_proxy => config.no_proxy
         }.merge(tvars))
 
-        #env[:ui].info 'config_file'
-        #env[:ui].info config_file.to_s
+        env[:ui].info 'chef client.rb rendered as:'
+        env[:ui].info config_file.to_s
 
         # Create a temporary file to store the data so we
         # can upload it
@@ -74,7 +74,7 @@ module Vagrant
           remote_file.gsub!('/','\\') 
         end
 
-        env[:vm].channel.upload(temp.path, File.join(config.provisioning_path, "dna.json").gsub!('/','\\') )
+        env[:vm].channel.upload(temp.path, remote_file )
       end
 
     end
