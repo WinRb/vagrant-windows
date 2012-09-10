@@ -18,7 +18,7 @@ module Vagrant
            tvars = template_vars
         end
         config_file = TemplateRenderer.render(template, {
-          :log_level => :debug,
+          :log_level => :warn,
           :http_proxy => config.http_proxy,
           :http_proxy_user => config.http_proxy_user,
           :http_proxy_pass => config.http_proxy_pass,
