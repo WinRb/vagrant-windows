@@ -118,11 +118,11 @@ module Vagrant
         @highline ||= HighLine.new
       end
       
-      def print_data(data, color = :cyan)
+      def print_data(data, color = :green)
         if data =~ /\n/
           data.split(/\n/).each { |d| print_data(d, color) }
         else
-          puts "#{h.color('winrm', color)} #{data.chomp}"
+          puts h.color(data.chomp, color)
         end
       end
 
@@ -157,7 +157,7 @@ module Vagrant
         if shell.eql? :cmd
           output = session.cmd(command) do |out,error|
             print_data(out) if out
-            print_data(error) if error
+            print_data(error, :red) if error
           end  
         elsif shell.eql? :powershell
           new_command = File.read(File.expand_path("#{File.dirname(__FILE__)}/../scripts/command_alias.ps1"))
@@ -165,7 +165,7 @@ module Vagrant
           new_command << command
           output = session.powershell(new_command) do |out,error|
             print_data(out) if out
-            print_data(error) if error
+            print_data(error, :red) if error
           end
         else
           raise Vagrant::Errors::WinRMInvalidShell, "#{shell} is not a valid type of shell"

@@ -72,8 +72,6 @@ module Vagrant
             vm_interface_map[driver_mac_address[naked_mac]] = { :name => nic[:net_connection_id], :mac_address => naked_mac, :index => nic[:interface_index] }
           end
         end
-        puts networks
-        puts vm_interface_map
         networks.each do |network|
           if network[:type].to_sym == :static
               vm.channel.execute("netsh interface ip set address \"#{vm_interface_map[network[:interface]+1][:name]}\" static #{network[:ip]} #{network[:netmask]}")

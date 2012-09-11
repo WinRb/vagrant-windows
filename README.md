@@ -102,3 +102,8 @@ References and Shout Outs
 - Chris McClimans - Vagrant Branch (https://github.com/hh/vagrant/blob/feature/winrm/)
 -Dan Wanek - WinRM GEM (https://github.com/zenchild/WinRM)
   - +1 For being super responsive to pull requests.
+
+
+Changelog
+=========
+0.1.1 - Remove extra debug information from command output.
