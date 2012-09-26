@@ -151,9 +151,9 @@ module Vagrant
 
     # WMI call
     def wmi(wql)
-      logger.info("WMI call: #{wql}")
+      logger.debug("WMI call: #{wql}")
       result = session.run_wql(wql)
-      logger.info("WMI result: #{result.inspect}")
+      logger.debug("WMI result: #{result.inspect}")
       return result
     end
 
