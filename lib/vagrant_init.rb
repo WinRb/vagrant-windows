@@ -8,6 +8,9 @@ require 'vagrant-windows/config/winrm'
 # Add WinRM Communication Channel
 require 'vagrant-windows/communication/winrm'
 
+# Add Provisioner
+require 'vagrant-windows/provisioners/puppet'
+
 #Monkey Patch the VM object to support multiple channels
 require 'vagrant-windows/monkey_patches/vm'
 
