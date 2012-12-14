@@ -3,7 +3,12 @@ module Vagrant
     	class Puppet < Base
     		def run_puppet_client
 		        options = [config.options].flatten
-		        options << "--modulepath '#{@module_paths.values.join(':')}'" if !@module_paths.empty?
+		        if env[:vm].config.vm.guest == :windows
+		        	options << "--modulepath '#{@module_paths.values.join(';')}'" if !@module_paths.empty?
+		        else
+		        	options << "--modulepath '#{@module_paths.values.join(':')}'" if !@module_paths.empty?
+		        end
+		        
 		        options << @manifest_file
 		        options = options.join(" ")
 
@@ -17,8 +22,11 @@ module Vagrant
 
 		          facter = "#{facts.join(" ")} "
 		        end
-
-		        command = "cd #{manifests_guest_path}; if($?) \{ #{facter}puppet apply #{options} \}"
+		        if env[:vm].config.vm.guest == :windows
+		        	command = "cd #{manifests_guest_path}; if($?) \{ #{facter}puppet apply #{options} \}"
+		        else
+		        	command = "cd #{manifests_guest_path} && #{facter}puppet apply #{options}"
+		        end
 
 		        env[:ui].info I18n.t("vagrant.provisioners.puppet.running_puppet",
 		                             :manifest => @manifest_file)
@@ -36,9 +44,18 @@ module Vagrant
 	        def verify_shared_folders(folders)
 		        folders.each do |folder|
 		          @logger.debug("Checking for shared folder: #{folder}")
-		          if !env[:vm].channel.test("if(-not (test-path #{folder})) \{exit 1\} ")
-		            raise PuppetError, :missing_shared_folders
-		          end
+
+		          
+		          if env[:vm].config.vm.guest == :windows
+			       	if !env[:vm].channel.test("if(-not (test-path #{folder})) \{exit 1\} ")
+		            	raise PuppetError, :missing_shared_folders
+		          	end
+			      else
+			       	if !env[:vm].channel.test("test -d #{folder}")
+            			raise PuppetError, :missing_shared_folders
+         			end
+			      end
+
 		        end
 	      	end
      	end
