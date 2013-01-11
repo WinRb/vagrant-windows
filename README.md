@@ -1,3 +1,6 @@
+TODO:
+ vagrant rdp && vagrant ps to connect to VM
+
  
 Installing
 ==========
