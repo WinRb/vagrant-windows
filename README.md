@@ -1,3 +1,6 @@
+TODO:
+ vagrant rdp && vagrant ps to connect to VM
+
  
 Installing
 ==========
@@ -71,11 +74,12 @@ What Works?
 ===========
 - vagrant up|hault|reload|provision
 - Chef Vagrant Provisioner
+- Puppet standalone provisioning
 
 What has not been tested
 ========================
 - Everything Else!!!
-- Shell and Puppet Provisioners 
+- Shell provisioning
   - Shell should work, though I have not vetted it yet.
 
 What does not work
@@ -107,3 +111,5 @@ References and Shout Outs
 Changelog
 =========
 0.1.1 - Remove extra debug information from command output.
+0.1.2 - added virtual box 4.2 support
+0.1.3 - added puppet provisioner
