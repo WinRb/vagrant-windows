@@ -17,13 +17,17 @@ module Vagrant
 		        if !config.facter.empty?
 		          facts = []
 		          config.facter.each do |key, value|
-		            facts << "FACTER_#{key}='#{value}'"
+		          	if env[:vm].config.vm.guest == :windows
+		          		facts << "$env:FACTER_#{key}='#{value}';"
+					else
+		            	facts << "FACTER_#{key}='#{value}'"
+		            end
 		          end
-
-		          facter = "#{facts.join(" ")} "
+					
+		        	facter = "#{facts.join(" ")} "
 		        end
 		        if env[:vm].config.vm.guest == :windows
-		        	command = "cd #{manifests_guest_path}; if($?) \{ #{facter}puppet apply #{options} \}"
+		        	command = "cd #{manifests_guest_path}; if($?) \{ #{facter} puppet apply #{options} \}"
 		        else
 		        	command = "cd #{manifests_guest_path} && #{facter}puppet apply #{options}"
 		        end
