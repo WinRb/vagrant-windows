@@ -65,11 +65,16 @@ module Vagrant
           :shell      => :powershell
         }.merge(opts || {})
 
+        # HACK: Ensure credential delegation is supported on the guest (COOK-1172)
+        if command.include?("chef-solo -c")
+          command = "ps-runas \"#{vm.config.winrm.username}\" \"#{vm.config.winrm.password}\" \"powershell.exe\" \"-Command #{command}\""
+        end
+
         # Connect via WinRM and execute the command in the shell.
         exceptions = [HTTPClient::KeepAliveDisconnected] 
         exit_status = retryable(:tries => @vm.config.winrm.max_tries,   :on => exceptions, :sleep => 10) do
           logger.debug "WinRM Trying to connect"
-          shell_execute(command,opts[:shell], &block)
+          shell_execute(command, opts[:shell], &block)
         end
 
         logger.debug("#{command} EXIT STATUS #{exit_status.inspect}")
@@ -150,19 +155,16 @@ module Vagrant
       protected
 
       # Executes the command on an SSH connection within a login shell.
-      def shell_execute(command,shell = :powershell)
-        logger.info("Execute: #{command}")
+      def shell_execute(command, shell = :powershell)
         exit_status = nil
-
+        
         if shell.eql? :cmd
           output = session.cmd(command) do |out,error|
             print_data(out) if out
             print_data(error, :red) if error
           end  
-        elsif shell.eql? :powershell
-          new_command = File.read(File.expand_path("#{File.dirname(__FILE__)}/../scripts/command_alias.ps1"))
-          new_command << "\r\n"
-          new_command << command
+        elsif shell.eql? :powershell          
+          new_command = load_script("command_alias.ps1") << "\r\n" << load_script("ps_runas.ps1") << "\r\n" << command
           output = session.powershell(new_command) do |out,error|
             print_data(out) if out
             print_data(error, :red) if error
@@ -171,7 +173,6 @@ module Vagrant
           raise Vagrant::Errors::WinRMInvalidShell, "#{shell} is not a valid type of shell"
         end
 
-        
         exit_status = output[:exitcode]
         logger.debug exit_status.inspect
 
@@ -179,7 +180,12 @@ module Vagrant
         return exit_status
       rescue ::WinRM::WinRMHTTPTransportError => e
           raise Vagrant::Errors::WinRMTimeout, e.message
-      end  
-    end
+      end
+      
+      def load_script(script_file_name)
+        File.read(File.expand_path("#{File.dirname(__FILE__)}/../scripts/#{script_file_name}"))
+      end
+        
+    end #WinRM class
   end
 end
