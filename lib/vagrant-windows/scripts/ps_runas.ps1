@@ -1,7 +1,6 @@
 function ps-runas ([String] $user, [String] $password, [String] $cmd, [String] $arguments)
 {
   $secpasswd = ConvertTo-SecureString $password -AsPlainText -Force
-
   $process = New-Object System.Diagnostics.Process
   $setup = $process.StartInfo
   $setup.FileName = $cmd
@@ -14,42 +13,44 @@ function ps-runas ([String] $user, [String] $password, [String] $cmd, [String] $
   $setup.RedirectStandardOutput = $true
   $setup.RedirectStandardInput = $false
   
-  # Hook into the standard output and error stream events
   $errEvent = Register-ObjectEvent -InputObj $process `
-  	-Event "ErrorDataReceived" `
-  	-Action `
-  	{
-  		param
-  		(
-  			[System.Object] $sender,
-  			[System.Diagnostics.DataReceivedEventArgs] $e
-  		)
-  		Write-Host $e.Data
-  	}
+    -Event "ErrorDataReceived" `
+    -Action `
+    {
+      param([System.Object] $sender, [System.Diagnostics.DataReceivedEventArgs] $e)
+      if ($e.Data)
+      {
+        Write-Host $e.Data
+      }
+      else
+      {
+        New-Event -SourceIdentifier "LastMsgReceived"
+      }
+    }
+
   $outEvent = Register-ObjectEvent -InputObj $process `
-  	-Event "OutputDataReceived" `
-  	-Action `
-  	{
-  		param
-  		(
-  			[System.Object] $sender,
-  			[System.Diagnostics.DataReceivedEventArgs] $e
-  		)
-  		Write-Host $e.Data
-  	}
+    -Event "OutputDataReceived" `
+    -Action `
+    {
+      param([System.Object] $sender, [System.Diagnostics.DataReceivedEventArgs] $e)
+      Write-Host $e.Data
+    }
   
-  if (!$process.Start())
+  $exitCode = -1
+  if ($process.Start())
   {
-    Write-Host "Failed to start $cmd"
+    $process.BeginOutputReadLine()
+    $process.BeginErrorReadLine()
+  
+    $process.WaitForExit()
+    $exitCode = [int]$process.ExitCode
+    Wait-Event -SourceIdentifier "LastMsgReceived" -Timeout 60 | Out-Null
+  
+    $process.CancelOutputRead()
+    $process.CancelErrorRead()
+    $process.Close()
   }
-  
-  $process.BeginOutputReadLine()
-  $process.BeginErrorReadLine()
-  
-  # Wait until process exit
-  $process.WaitForExit()
-  
-  $process.CancelOutputRead()
-  $process.CancelErrorRead()
-  $process.Close()
+  return $exitCode
 }
+
+

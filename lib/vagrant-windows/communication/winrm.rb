@@ -67,9 +67,12 @@ module Vagrant
 
         # HACK: Ensure credential delegation is supported on the guest (COOK-1172)
         if command.include?("chef-solo -c")
-          command = "ps-runas \"#{vm.config.winrm.username}\" \"#{vm.config.winrm.password}\" \"powershell.exe\" \"-Command #{command}\""
+          chefsolo_command = command
+          command = load_script("ps_runas.ps1") << "\r\n" << "exit ps-runas \"#{vm.config.winrm.username}\" \"#{vm.config.winrm.password}\" \"powershell.exe\" \"-Command #{chefsolo_command}\""
+        else
+          command = load_script("command_alias.ps1") << "\r\n" << command
         end
-
+        
         # Connect via WinRM and execute the command in the shell.
         exceptions = [HTTPClient::KeepAliveDisconnected] 
         exit_status = retryable(:tries => @vm.config.winrm.max_tries,   :on => exceptions, :sleep => 10) do
@@ -163,9 +166,8 @@ module Vagrant
             print_data(out) if out
             print_data(error, :red) if error
           end  
-        elsif shell.eql? :powershell          
-          new_command = load_script("command_alias.ps1") << "\r\n" << load_script("ps_runas.ps1") << "\r\n" << command
-          output = session.powershell(new_command) do |out,error|
+        elsif shell.eql? :powershell
+          output = session.powershell(command) do |out,error|
             print_data(out) if out
             print_data(error, :red) if error
           end
