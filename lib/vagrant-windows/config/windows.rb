@@ -1,6 +1,9 @@
-module Vagrant
-  module Config
-    class Windows < Vagrant::Config::Base
+require "vagrant"
+
+module VagrantPlugins
+  module Windows
+    class WindowsConfig < Vagrant.plugin(2, :config)
+      
       attr_accessor :winrm_user
       attr_accessor :winrm_password
       attr_accessor :halt_timeout
@@ -15,13 +18,17 @@ module Vagrant
         @device = "e1000g"
       end
 
-      def validate(env, errors)
-        [ :winrm_user, :winrm_password].each do |field|
-          errors.add(I18n.t("vagrant.config.common.error_empty", :field => field)) if !instance_variable_get("@#{field}".to_sym)
+      def validate(machine)
+        errors = []
+        
+        [:winrm_user, :winrm_password].each do |field|
+          errors << I18n.t("vagrant.config.common.error_empty", :field => field) if \
+            !instance_variable_get("@#{field}".to_sym)
         end
+        
+        { "Windows Guest" => errors }
       end
+      
     end
   end
 end
-
-Vagrant.config_keys.register(:windows) { Vagrant::Config::Windows }

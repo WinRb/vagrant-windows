@@ -1,6 +1,9 @@
-module Vagrant
-  module Config
-    class WinRM < Vagrant::Config::Base
+require "vagrant"
+
+module VagrantPlugins
+  module Windows
+    class WinRMConfig < Vagrant.plugin(2, :config)
+
       attr_accessor :username
       attr_accessor :password
       attr_accessor :host
@@ -18,14 +21,17 @@ module Vagrant
         @timeout = 1800
       end
 
-      def validate(env, errors)
+      def validate(machine)
+        errors = []
+        
         [:username, :password, :host, :max_tries, :timeout].each do |field|
-          errors.add(I18n.t("vagrant.config.common.error_empty", :field => field)) if !instance_variable_get("@#{field}".to_sym)
+          errors << I18n.t("vagrant.config.common.error_empty", :field => field) if \
+            !instance_variable_get("@#{field}".to_sym)
         end
-
+        
+        { "WinRM" => errors }
       end
+      
     end
   end
 end
-
-Vagrant.config_keys.register(:winrm) { Vagrant::Config::WinRM }
