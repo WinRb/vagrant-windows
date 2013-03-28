@@ -11,7 +11,7 @@ if Vagrant::VERSION < "1.1.0"
 end
 
 #Monkey Patch the VM object to support multiple channels
-require_relative 'monkey_patches/vm'
+require_relative 'monkey_patches/machine'
 
 #Add vagrant-windows plugin errors
 require_relative 'errors'
