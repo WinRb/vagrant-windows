@@ -1,11 +1,9 @@
 require 'log4r'
-#require 'em-winrm'
 
 module Vagrant
   # Manages WINRM access to a specific environment. Allows an environment to
   # run commands, upload files, and check if a host is up.
   class WinRM
-    include Util::SafeExec
 
     def initialize(vm)
       @vm = vm
