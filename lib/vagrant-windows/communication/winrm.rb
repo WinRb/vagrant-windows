@@ -1,7 +1,6 @@
 require 'timeout'
 
 require 'log4r'
-#require 'em-winrm'
 require 'winrm'
 require 'highline'
 
@@ -13,16 +12,21 @@ require 'vagrant/util/retryable'
 module Vagrant
   module Communication
     # Provides communication with the VM via WinRM.
-    class WinRM < Base
+    class WinRMCommunicator < Vagrant.plugin("2", :communicator)
 
-      include Util::ANSIEscapeCodeRemover
-      include Util::Retryable
+      include Vagrant::Util::ANSIEscapeCodeRemover
+      include Vagrant::Util::Retryable
 
       attr_reader :logger
-      attr_reader :vm
+      attr_reader :machine
+      
+      def self.match?(machine)
+        # only Windows machines use WinRM
+        machine.guest.class.eql? VagrantPlugins::Windows::Guest
+      end
 
-      def initialize(vm)
-        @vm     = vm
+      def initialize(machine)
+        @machine = machine
         @logger = Log4r::Logger.new("vagrant::communication::winrm")
         @co = nil
       end
@@ -30,7 +34,7 @@ module Vagrant
       def ready?
         logger.debug("Checking whether WinRM is ready...")
 
-        Timeout.timeout(@vm.config.winrm.timeout) do
+        Timeout.timeout(@machine.config.winrm.timeout) do
           execute "hostname"
         end
 
@@ -45,16 +49,11 @@ module Vagrant
 
         return false
       end
-
-      # Wrap Sudo in execute.... One day we could integrate with UAC, but Icky
-      def sudo(command, opts=nil, &block)
-        execute(command,opts,&block)
-      end
       
       def execute(command, opts=nil, &block)
 
         # Connect to WinRM, giving it a few tries
-        logger.info("Connecting to WinRM: #{@vm.winrm.info[:host]}:#{@vm.winrm.info[:port]}")
+        logger.info("Connecting to WinRM: #{@machine.winrm.info[:host]}:#{@machine.winrm.info[:port]}")
 
         opts = {
           :error_check => true,
@@ -75,7 +74,7 @@ module Vagrant
         
         # Connect via WinRM and execute the command in the shell.
         exceptions = [HTTPClient::KeepAliveDisconnected] 
-        exit_status = retryable(:tries => @vm.config.winrm.max_tries,   :on => exceptions, :sleep => 10) do
+        exit_status = retryable(:tries => @machine.config.winrm.max_tries,   :on => exceptions, :sleep => 10) do
           logger.debug "WinRM Trying to connect"
           shell_execute(command, opts[:shell], &block)
         end
@@ -94,6 +93,49 @@ module Vagrant
         # Return the exit status
         exit_status
       end
+      
+      # Wrap Sudo in execute.... One day we could integrate with UAC, but Icky
+      def sudo(command, opts=nil, &block)
+        execute(command,opts,&block)
+      end
+      
+      def download(from, to=nil)
+        @logger.debug("Downloading: #{from} to #{to}")
+
+        #TODO: Download impl!
+        #scp_connect do |scp|
+        #  scp.download!(from, to)
+        #end
+      end
+      
+      def test(command, opts=nil)
+        #TODO: Does this work? Copied from Vagrant
+        opts = { :error_check => false }.merge(opts || {})
+        execute(command, opts) == 0
+      end
+      
+      def upload(from, to)
+        file = "winrm-upload-#{rand()}"
+        file_name = (session.cmd("echo %TEMP%\\#{file}"))[:data][0][:stdout].chomp
+        session.powershell <<-EOH
+          if(Test-Path #{to})
+          {
+            rm #{to}
+          }
+        EOH
+        Base64.encode64(IO.binread(from)).gsub("\n",'').chars.to_a.each_slice(8000-file_name.size) do |chunk|
+          out = session.cmd( "echo #{chunk.join} >> \"#{file_name}\"" )
+        end
+        execute "mkdir [System.IO.Path]::GetDirectoryName(\"#{to}\")"
+        execute <<-EOH
+          $base64_string = Get-Content \"#{file_name}\"
+          $bytes  = [System.Convert]::FromBase64String($base64_string) 
+          $new_file = [System.IO.Path]::GetFullPath(\"#{to}\")
+          [System.IO.File]::WriteAllBytes($new_file,$bytes)
+        EOH
+      end
+      
+      protected
 
       def new_session
         opts = {
@@ -132,27 +174,6 @@ module Vagrant
         else
           puts h.color(data.chomp, color)
         end
-      end
-
-      def upload(from, to)
-        file = "winrm-upload-#{rand()}"
-        file_name = (session.cmd("echo %TEMP%\\#{file}"))[:data][0][:stdout].chomp
-        session.powershell <<-EOH
-          if(Test-Path #{to})
-          {
-            rm #{to}
-          }
-        EOH
-        Base64.encode64(IO.binread(from)).gsub("\n",'').chars.to_a.each_slice(8000-file_name.size) do |chunk|
-          out = session.cmd( "echo #{chunk.join} >> \"#{file_name}\"" )
-        end
-        execute "mkdir [System.IO.Path]::GetDirectoryName(\"#{to}\")"
-        execute <<-EOH
-          $base64_string = Get-Content \"#{file_name}\"
-          $bytes  = [System.Convert]::FromBase64String($base64_string) 
-          $new_file = [System.IO.Path]::GetFullPath(\"#{to}\")
-          [System.IO.File]::WriteAllBytes($new_file,$bytes)
-        EOH
       end
 
       protected

@@ -3,9 +3,10 @@ module Vagrant
     
     ssh_communicate = instance_method(:communicate)
     
+    # This patch is needed until Vagrant supports a configurable communication channel
     define_method(:communicate) do
-      if @guest.class.eql? Vagrant::Guest::Windows
-        @communicator ||= Communication::WinRM.new(self)
+      if @guest.class.eql? VagrantPlugins::Windows::Guest
+        @communicator ||= Communication::WinRMCommunicator.new(self)
       else
         @communicator ||= ssh_communicate.bind(self).()
       end
