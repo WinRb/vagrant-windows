@@ -28,19 +28,19 @@ module VagrantPlugins
       Windows machines as guests.
       DESC
 
-      config("windows") do
+      config(:windows) do
         require_relative "config/windows"
-        Config
+        VagrantPlugins::Windows::Config
       end
       
-      config("winrm") do
+      config(:winrm) do
         require_relative "config/winrm"
-        Config
+        VagrantPlugins::WinRM::Config
       end
       
       guest("windows") do
         require_relative 'guest/windows'
-        Guest
+        VagrantPlugins::Windows::Guest
       end
       
       #TODO:Puppet provisioner

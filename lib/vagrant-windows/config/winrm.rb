@@ -1,8 +1,8 @@
 require "vagrant"
 
 module VagrantPlugins
-  module Windows
-    class WinRMConfig < Vagrant.plugin(2, :config)
+  module WinRM
+    class Config < Vagrant.plugin("2", :config)
 
       attr_accessor :username
       attr_accessor :password
