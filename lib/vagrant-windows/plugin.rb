@@ -29,6 +29,11 @@ module VagrantPlugins
         Config
       end
       
+      guest("windows") do
+        require_relative 'guest/windows'
+        Guest
+      end      
+      
     end
   end
 end

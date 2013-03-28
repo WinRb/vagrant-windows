@@ -1,9 +1,9 @@
-module Vagrant
-  module Guest
+module VagrantPlugins
+  module Windows
     # A general Vagrant system implementation for "windows".
     #
     # Contributed by Chris McClimans <chris@hippiehacker.org>
-    class Windows < Base
+    class Guest < Vagrant.plugin(2, :guest)
       # A custom config class which will be made accessible via `config.windows`
       # Here for whenever it may be used.
       class WindowsError < Errors::VagrantError
@@ -12,7 +12,7 @@ module Vagrant
 
       def change_host_name(name)
         #### on windows, renaming a computer seems to require a reboot
-        vm.channel.execute("wmic computersystem where name=\"%COMPUTERNAME%\" call rename name=\"#{name}\"")
+        vm.communicate.execute("wmic computersystem where name=\"%COMPUTERNAME%\" call rename name=\"#{name}\"")
       end
 
       # TODO: I am sure that ciphering windows versions will be important at some point
@@ -21,7 +21,7 @@ module Vagrant
       end
 
       def halt
-        @vm.channel.execute("shutdown /s /t 1 /c \"Vagrant Halt\" /f /d p:4:1")
+        @vm.communicate.execute("shutdown /s /t 1 /c \"Vagrant Halt\" /f /d p:4:1")
 
         # Wait until the VM's state is actually powered off. If this doesn't
         # occur within a reasonable amount of time (15 seconds by default),
@@ -39,7 +39,7 @@ module Vagrant
         mount_script = TemplateRenderer.render(File.expand_path("#{File.dirname(__FILE__)}/../scripts/mount_volume.ps1"),
                                           :options => {:mount_point => guestpath, :name => name})
 
-        @vm.channel.execute(mount_script,{:shell => :powershell})
+        @vm.communicate.execute(mount_script,{:shell => :powershell})
       end
 
       def mount_nfs(ip, folders)
@@ -51,8 +51,8 @@ module Vagrant
         #  real_guestpath = expanded_guest_path(opts[:guestpath])
 
           # Do the actual creating and mounting
-        #  @vm.channel.sudo("mkdir -p #{real_guestpath}")
-        #  @vm.channel.sudo("mount -o vers=#{opts[:nfs_version]} #{ip}:'#{opts[:hostpath]}' #{real_guestpath}",
+        #  @vm.communicate.sudo("mkdir -p #{real_guestpath}")
+        #  @vm.communicate.sudo("mount -o vers=#{opts[:nfs_version]} #{ip}:'#{opts[:hostpath]}' #{real_guestpath}",
         #                  :error_class => LinuxError,
         #                  :error_key => :mount_nfs_fail)
         #end
@@ -66,24 +66,30 @@ module Vagrant
         end
 
         vm_interface_map = {}
-        @vm.channel.session.wql("SELECT * FROM Win32_NetworkAdapter WHERE NetConnectionStatus=2")[:win32_network_adapter].each do |nic|
+        wql = "SELECT * FROM Win32_NetworkAdapter WHERE NetConnectionStatus=2"
+        @vm.communicate.session.wql(wql)[:win32_network_adapter].each do |nic|
           naked_mac = nic[:mac_address].gsub(':','')
           if driver_mac_address[naked_mac]
-            vm_interface_map[driver_mac_address[naked_mac]] = { :name => nic[:net_connection_id], :mac_address => naked_mac, :index => nic[:interface_index] }
+            vm_interface_map[driver_mac_address[naked_mac]] =
+              { :name => nic[:net_connection_id], :mac_address => naked_mac, :index => nic[:interface_index] }
           end
         end
+        
         networks.each do |network|
+          netsh = "netsh interface ip set address \"#{vm_interface_map[network[:interface]+1][:name]}\" "
           if network[:type].to_sym == :static
-              vm.channel.execute("netsh interface ip set address \"#{vm_interface_map[network[:interface]+1][:name]}\" static #{network[:ip]} #{network[:netmask]}")
+            netsh = "#{netsh} static #{network[:ip]} #{network[:netmask]}"
           elsif network[:type].to_sym == :dhcp
-            vm.channel.execute("netsh interface ip set address \"#{vm_interface_map[network[:interface]+1][:name]}\" dhcp")
+            netsh = "#{netsh} dhcp"
+          else
+            raise WindowsError, "#{network[:type]} network type is not supported, try static or dhcp"
           end
+          vm.communicate.execute(netsh)
         end
 
         #netsh interface ip set address name="Local Area Connection" static 192.168.0.100 255.255.255.0 192.168.0.1 1
         
       end
-
 
       def windows_path(path)
         p = ''
@@ -95,10 +101,6 @@ module Vagrant
         p.gsub /\\\\{0,}/, "\\"
       end
 
-
-
     end
   end
 end
-
-Vagrant.guests.register(:windows)  { Vagrant::Guest::Windows }
