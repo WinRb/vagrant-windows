@@ -22,13 +22,17 @@ module Vagrant
       
       def self.match?(machine)
         # only Windows machines use WinRM
-        machine.guest.class.eql? VagrantPlugins::Windows::Guest
+        #machine.guest.class.eql? VagrantPlugins::Windows::Guest
+        true
       end
 
       def initialize(machine)
         @machine = machine
+        @winrm = WinRM.new(machine)
         @logger = Log4r::Logger.new("vagrant::communication::winrm")
         @co = nil
+        
+        @logger.info("initializing WinRMCommunicator")
       end
 
       def ready?
@@ -53,7 +57,7 @@ module Vagrant
       def execute(command, opts=nil, &block)
 
         # Connect to WinRM, giving it a few tries
-        logger.info("Connecting to WinRM: #{@machine.winrm.info[:host]}:#{@machine.winrm.info[:port]}")
+        logger.info("Connecting to WinRM: #{@winrm.info[:host]}:#{@winrm.info[:port]}")
 
         opts = {
           :error_check => true,
@@ -67,7 +71,7 @@ module Vagrant
         # HACK: Ensure credential delegation is supported on the guest (COOK-1172)
         if command.include?("chef-solo -c")
           chefsolo_command = command
-          command = load_script("ps_runas.ps1") << "\r\n" << "exit ps-runas \"#{vm.config.winrm.username}\" \"#{vm.config.winrm.password}\" \"powershell.exe\" \"-Command #{chefsolo_command}\""
+          command = load_script("ps_runas.ps1") << "\r\n" << "exit ps-runas \"#{@machine.config.winrm.username}\" \"#{@machine.config.winrm.password}\" \"powershell.exe\" \"-Command #{chefsolo_command}\""
         else
           command = load_script("command_alias.ps1") << "\r\n" << command
         end
@@ -139,11 +143,11 @@ module Vagrant
 
       def new_session
         opts = {
-          :user => vm.config.winrm.username,
-          :pass => vm.config.winrm.password,
-          :host => vm.config.winrm.host,
-          :port => vm.winrm.info[:port],
-          :operation_timeout => vm.config.winrm.timeout,
+          :user => @machine.config.winrm.username,
+          :pass => @machine.config.winrm.password,
+          :host => @machine.config.winrm.host,
+          :port => @winrm.info[:port],
+          :operation_timeout => @machine.config.winrm.timeout,
           :basic_auth_only => true
         }.merge ({})
 

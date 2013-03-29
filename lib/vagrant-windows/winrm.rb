@@ -17,9 +17,11 @@ module Vagrant
     def info
       results = {
         :host          => @vm.config.winrm.host,
-        :port          => @vm.config.winrm.port || @vm.driver.ssh_port(@vm.config.winrm.guest_port),
+        :port          => @vm.config.winrm.port,
         :username      => @vm.config.winrm.username
       }
+      
+      @logger.info("WinRM config: #{results.inspect}")
 
       # This can happen if no port is set and for some reason Vagrant
       # can't detect an SSH port.

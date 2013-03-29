@@ -6,5 +6,7 @@ module VagrantPlugins
     
     autoload :Errors, lib_path.join("errors")
     autoload :WinRM, lib_path.join("winrm")
+    autoload :WinRMCommunicator, lib_path.join("communication/winrm")
+    
   end
 end

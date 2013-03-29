@@ -12,7 +12,7 @@ module VagrantPlugins
 
       def change_host_name(name)
         #### on windows, renaming a computer seems to require a reboot
-        vm.communicate.execute("wmic computersystem where name=\"%COMPUTERNAME%\" call rename name=\"#{name}\"")
+        @vm.communicate.execute("wmic computersystem where name=\"%COMPUTERNAME%\" call rename name=\"#{name}\"")
       end
 
       # TODO: I am sure that ciphering windows versions will be important at some point
@@ -84,7 +84,7 @@ module VagrantPlugins
           else
             raise WindowsError, "#{network[:type]} network type is not supported, try static or dhcp"
           end
-          vm.communicate.execute(netsh)
+          @vm.communicate.execute(netsh)
         end
 
         #netsh interface ip set address name="Local Area Connection" static 192.168.0.100 255.255.255.0 192.168.0.1 1

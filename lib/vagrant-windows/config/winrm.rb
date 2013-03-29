@@ -16,6 +16,7 @@ module VagrantPlugins
         @username = "vagrant"
         @password = "vagrant"
         @guest_port = 5985
+        @port = 5985
         @host = "localhost"
         @max_tries = 12
         @timeout = 1800
