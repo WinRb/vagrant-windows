@@ -4,42 +4,48 @@ module VagrantPlugins
     #
     # Contributed by Chris McClimans <chris@hippiehacker.org>
     class Guest < Vagrant.plugin("2", :guest)
-      # A custom config class which will be made accessible via `config.windows`
-      # Here for whenever it may be used.
-      class WindowsError < Errors::VagrantError
-        error_namespace("vagrant.guest.windows")
+      
+      attr_reader :machine
+      
+      def initialize(machine)
+        super(machine)
+        @machine = machine
+        @logger = Log4r::Logger.new("vagrant::windows::guest")
       end
 
       def change_host_name(name)
+        @logger.info("change host name to: #{name}")
         #### on windows, renaming a computer seems to require a reboot
-        @vm.communicate.execute("wmic computersystem where name=\"%COMPUTERNAME%\" call rename name=\"#{name}\"")
+        @machine.communicate.execute("wmic computersystem where name=\"%COMPUTERNAME%\" call rename name=\"#{name}\"")
       end
 
       # TODO: I am sure that ciphering windows versions will be important at some point
       def distro_dispatch
+        @logger.info("distro_dispatch: windows")
         :windows
       end
 
       def halt
-        @vm.communicate.execute("shutdown /s /t 1 /c \"Vagrant Halt\" /f /d p:4:1")
+        @machine.communicate.execute("shutdown /s /t 1 /c \"Vagrant Halt\" /f /d p:4:1")
 
         # Wait until the VM's state is actually powered off. If this doesn't
         # occur within a reasonable amount of time (15 seconds by default),
         # then simply return and allow Vagrant to kill the machine.
         count = 0
-        while @vm.state != :poweroff
+        while @machine.state != :poweroff
           count += 1
 
-          return if count >= @vm.config.windows.halt_timeout
-          sleep @vm.config.windows.halt_check_interval
+          return if count >= @machine.config.windows.halt_timeout
+          sleep @machine.config.windows.halt_check_interval
         end
       end
 
       def mount_shared_folder(name, guestpath, options)
+        @logger.info("mount_shared_folder: #{name}")
         mount_script = TemplateRenderer.render(File.expand_path("#{File.dirname(__FILE__)}/../scripts/mount_volume.ps1"),
                                           :options => {:mount_point => guestpath, :name => name})
 
-        @vm.communicate.execute(mount_script,{:shell => :powershell})
+        @machine.communicate.execute(mount_script,{:shell => :powershell})
       end
 
       def mount_nfs(ip, folders)
@@ -51,23 +57,47 @@ module VagrantPlugins
         #  real_guestpath = expanded_guest_path(opts[:guestpath])
 
           # Do the actual creating and mounting
-        #  @vm.communicate.sudo("mkdir -p #{real_guestpath}")
-        #  @vm.communicate.sudo("mount -o vers=#{opts[:nfs_version]} #{ip}:'#{opts[:hostpath]}' #{real_guestpath}",
+        #  @machine.communicate.sudo("mkdir -p #{real_guestpath}")
+        #  @machine.communicate.sudo("mount -o vers=#{opts[:nfs_version]} #{ip}:'#{opts[:hostpath]}' #{real_guestpath}",
         #                  :error_class => LinuxError,
         #                  :error_key => :mount_nfs_fail)
         #end
       end
 
       def configure_networks(networks)
-        ### HACK!!!!! 
+        @logger.info("configure_networks: #{networks.inspect}")
+        
+        #HACK: Nori is used to process the WQL query results and we don't want coersion of types
         Nori.advanced_typecasting = false
-        if driver_mac_address = @vm.driver.read_mac_addresses
-          driver_mac_address = driver_mac_address.invert
+        
+        # The VBox driver 4.0 and 4.1 implement read_mac_addresses, but 4.2 does not?
+        begin
+          driver_mac_address = @machine.provider.driver.read_mac_addresses.invert
+        rescue NoMethodError
+          driver_mac_address = {}
+          driver_mac_address[@machine.provider.driver.read_mac_address] = "macaddress1"
         end
+        
+        # The VBox driver 4.0 and 4.1 support read_mac_addresses, but 4.2 does not?
+        #if @machine.provider.driver.respond_to?(:read_mac_addresses)
+        #  driver_mac_address = @machine.provider.driver.read_mac_addresses.invert
+        #else
+
+          #end
+        
+        # macs[adapter] = mac
+        #if driver_mac_address = @machine.provider.driver.read_mac_addresses
+        #  driver_mac_address = driver_mac_address.invert
+        #end
+        # macs[mac] = adapter
+        
+        # macaddress1="0800273FAC5A"
 
         vm_interface_map = {}
+        
+        # NetConnectionStatus=2 -- connected
         wql = "SELECT * FROM Win32_NetworkAdapter WHERE NetConnectionStatus=2"
-        @vm.communicate.session.wql(wql)[:win32_network_adapter].each do |nic|
+        @machine.communicate.session.wql(wql)[:win32_network_adapter].each do |nic|
           naked_mac = nic[:mac_address].gsub(':','')
           if driver_mac_address[naked_mac]
             vm_interface_map[driver_mac_address[naked_mac]] =
@@ -84,7 +114,7 @@ module VagrantPlugins
           else
             raise WindowsError, "#{network[:type]} network type is not supported, try static or dhcp"
           end
-          @vm.communicate.execute(netsh)
+          @machine.communicate.execute(netsh)
         end
 
         #netsh interface ip set address name="Local Area Connection" static 192.168.0.100 255.255.255.0 192.168.0.1 1

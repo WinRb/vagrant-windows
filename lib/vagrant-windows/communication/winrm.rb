@@ -138,8 +138,6 @@ module Vagrant
           [System.IO.File]::WriteAllBytes($new_file,$bytes)
         EOH
       end
-      
-      protected
 
       def new_session
         opts = {
