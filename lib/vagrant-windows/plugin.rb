@@ -14,7 +14,6 @@ require "vagrant-windows/errors"
 require "vagrant-windows/winrm"
 require "vagrant-windows/communication/winrm"
 require "vagrant-windows/monkey_patches/machine"
-require "vagrant-windows/monkey_patches/driver"
 
 # Vagrant doesn't yet support multiple communicators, override SSH with WinRM
 #Vagrant.plugin("2").manager.communicators[:ssh] = Vagrant::Communication::WinRMCommunicator
