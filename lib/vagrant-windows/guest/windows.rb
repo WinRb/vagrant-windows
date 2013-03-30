@@ -77,24 +77,9 @@ module VagrantPlugins
           driver_mac_address = {}
           driver_mac_address[@machine.provider.driver.read_mac_address] = "macaddress1"
         end
-        
-        # The VBox driver 4.0 and 4.1 support read_mac_addresses, but 4.2 does not?
-        #if @machine.provider.driver.respond_to?(:read_mac_addresses)
-        #  driver_mac_address = @machine.provider.driver.read_mac_addresses.invert
-        #else
-
-          #end
-        
-        # macs[adapter] = mac
-        #if driver_mac_address = @machine.provider.driver.read_mac_addresses
-        #  driver_mac_address = driver_mac_address.invert
-        #end
-        # macs[mac] = adapter
-        
-        # macaddress1="0800273FAC5A"
 
         vm_interface_map = {}
-        
+
         # NetConnectionStatus=2 -- connected
         wql = "SELECT * FROM Win32_NetworkAdapter WHERE NetConnectionStatus=2"
         @machine.communicate.session.wql(wql)[:win32_network_adapter].each do |nic|
