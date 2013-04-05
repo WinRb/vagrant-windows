@@ -9,7 +9,7 @@ require 'vagrant/util/file_mode'
 require 'vagrant/util/platform'
 require 'vagrant/util/retryable'
 
-module Vagrant
+module VagrantWindows
   module Communication
     # Provides communication with the VM via WinRM.
     class WinRMCommunicator < Vagrant.plugin("2", :communicator)
@@ -21,9 +21,7 @@ module Vagrant
       attr_reader :machine
       
       def self.match?(machine)
-        # only Windows machines use WinRM
-        #machine.guest.class.eql? VagrantPlugins::Windows::Guest
-        true
+        machine.config.vm.guest.eql? :windows
       end
 
       def initialize(machine)
@@ -32,7 +30,7 @@ module Vagrant
         @logger = Log4r::Logger.new("vagrant::communication::winrm")
         @co = nil
         
-        @logger.info("initializing WinRMCommunicator")
+        @logger.debug("initializing WinRMCommunicator")
       end
 
       def ready?
@@ -43,13 +41,13 @@ module Vagrant
         end
 
         # If we reached this point then we successfully connected
-        logger.info("WinRM is ready!")
+        logger.debug("WinRM is ready!")
         true
       rescue Timeout::Error, HTTPClient::KeepAliveDisconnected => e
         #, Errors::SSHConnectionRefused, Net::SSH::Disconnect => e
         # The above errors represent various reasons that WinRM may not be
         # ready yet. Return false.
-        logger.info("WinRM not up yet: #{e.inspect}")
+        logger.debug("WinRM not up yet: #{e.inspect}")
 
         return false
       end
@@ -61,7 +59,7 @@ module Vagrant
 
         opts = {
           :error_check => true,
-          :error_class => Errors::VagrantError,
+          :error_class => ::Vagrant::Errors::VagrantError,
           :error_key   => :winrm_bad_exit_status,
           :command     => command,
           :sudo        => false,
@@ -78,7 +76,7 @@ module Vagrant
         
         # Connect via WinRM and execute the command in the shell.
         exceptions = [HTTPClient::KeepAliveDisconnected] 
-        exit_status = retryable(:tries => @machine.config.winrm.max_tries,   :on => exceptions, :sleep => 10) do
+        exit_status = retryable(:tries => @machine.config.winrm.max_tries, :on => exceptions, :sleep => 10) do
           logger.debug "WinRM Trying to connect"
           shell_execute(command, opts[:shell], &block)
         end
@@ -195,7 +193,7 @@ module Vagrant
             print_data(error, :red) if error
           end
         else
-          raise Vagrant::Errors::WinRMInvalidShell, "#{shell} is not a valid type of shell"
+          raise Errors::WinRMInvalidShell, "#{shell} is not a valid type of shell"
         end
 
         exit_status = output[:exitcode]
@@ -204,7 +202,7 @@ module Vagrant
         # Return the final exit status
         return exit_status
       rescue ::WinRM::WinRMHTTPTransportError => e
-          raise Vagrant::Errors::WinRMTimeout, e.message
+          raise Errors::WinRMTimeout, e.message
       end
       
       def load_script(script_file_name)

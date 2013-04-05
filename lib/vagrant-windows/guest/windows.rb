@@ -1,9 +1,9 @@
-module VagrantPlugins
-  module Windows
+module VagrantWindows
+  module Guest
     # A general Vagrant system implementation for "windows".
     #
     # Contributed by Chris McClimans <chris@hippiehacker.org>
-    class Guest < Vagrant.plugin("2", :guest)
+    class Windows < Vagrant.plugin("2", :guest)
       
       attr_reader :machine
       

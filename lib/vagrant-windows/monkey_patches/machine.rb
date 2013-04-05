@@ -8,7 +8,7 @@ module Vagrant
       unless @communicator
         if @config.vm.guest.eql? :windows
           @logger.info("guest is #{@config.vm.guest}, using WinRM for communication channel")
-          @communicator = Communication::WinRMCommunicator.new(self)
+          @communicator = ::VagrantWindows::Communication::WinRMCommunicator.new(self)
         else
           @logger.info("guest is #{@config.vm.guest}, using SSH for communication channel")
           @communicator = ssh_communicate.bind(self).()

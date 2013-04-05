@@ -31,28 +31,26 @@ require "vagrant-windows/config/winrm"
 # Add the new Vagrant Windows guest
 require "vagrant-windows/guest/windows"
 
-module VagrantPlugins
-  module Windows
-    class Plugin < Vagrant.plugin("2")
-      name "Windows guest"
-      description <<-DESC
-      This plugin installs a provider that allows Vagrant to manage
-      Windows machines as guests.
-      DESC
+module VagrantWindows
+  class Plugin < Vagrant.plugin("2")
+    name "Windows guest"
+    description <<-DESC
+    This plugin installs a provider that allows Vagrant to manage
+    Windows machines as guests.
+    DESC
 
-      config(:windows) do
-        VagrantPlugins::Windows::Config
-      end
-      
-      config(:winrm) do
-        VagrantPlugins::WinRM::Config
-      end
-      
-      guest("windows") do
-        VagrantPlugins::Windows::Guest
-      end
-      
-      #TODO:Puppet provisioner
+    config(:windows) do
+      VagrantWindows::Config::Windows
     end
+      
+    config(:winrm) do
+      VagrantWindows::Config::WinRM
+    end
+      
+    guest("windows") do
+      VagrantWindows::Guest::Windows
+    end
+      
+    #TODO:Puppet provisioner
   end
 end

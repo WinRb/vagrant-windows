@@ -1,6 +1,6 @@
 require 'log4r'
 
-module Vagrant
+module VagrantWindows
   # Manages WINRM access to a specific environment. Allows an environment to
   # run commands, upload files, and check if a host is up.
   class WinRM
