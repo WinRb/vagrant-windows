@@ -130,15 +130,7 @@ module VagrantWindows
       end
 
       def new_session
-        opts = {
-          :user => @machine.config.winrm.username,
-          :pass => @machine.config.winrm.password,
-          :host => @machine.config.winrm.host,
-          :port => @machine.config.winrm.port,
-          :operation_timeout => @machine.config.winrm.timeout,
-          :basic_auth_only => true
-        }.merge ({})
-        endpoint = "http://#{opts[:host]}:#{opts[:port]}/wsman"
+        opts = endpoint_options()
 
         logger.debug("Creating WinRM session to #{endpoint} with options: #{opts}")
         
@@ -173,9 +165,28 @@ module VagrantWindows
       end
 
       protected
+      
+      def endpoint_options
+        {
+          :user => @machine.config.winrm.username,
+          :pass => @machine.config.winrm.password,
+          :host => @machine.config.winrm.host,
+          :port => @machine.config.winrm.port,
+          :operation_timeout => @machine.config.winrm.timeout,
+          :basic_auth_only => true
+        }.merge ({})
+      end
+      
+      def endpoint
+        if !@winrm_endpoint
+          opts = endpoint_options()
+          @winrm_endpoint = "http://#{opts[:host]}:#{opts[:port]}/wsman"
+        end
+        @winrm_endpoint
+      end    
 
       # Executes the command on an SSH connection within a login shell.
-      def shell_execute(command, shell = :powershell)
+      def shell_execute(command, shell=:powershell)
         exit_status = nil
         
         @logger.debug("#{shell} executing remote: #{command}")
@@ -201,6 +212,14 @@ module VagrantWindows
           # Return the final exit status
           return exit_status
         rescue StandardError => e
+          # return a more specific auth error if we 401 status
+          if e.message.include?("401")
+            raise Errors::WinRMAuthorizationError,
+              :user => endpoint_options[:user],
+              :password => endpoint_options[:pass],
+              :endpoint => endpoint,
+              :message => e.message 
+          end
           raise Errors::WinRMExecutionError,
             :shell => shell,
             :command => command,
