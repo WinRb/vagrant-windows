@@ -22,11 +22,13 @@ module VagrantWindows
           :username      => @vm.config.winrm.username
         }
       
-        @logger.info("WinRM config: #{results.inspect}")
-
         # This can happen if no port is set and for some reason Vagrant
-        # can't detect an SSH port.
-        raise Errors::WinRMPortNotDetected if !results[:port]
+        # can't detect an WinRM port.
+        if !results[:port]
+          raise Errors::WinRMPortNotDetected,
+            :port => @vm.config.winrm.port,
+            :guest_port => @vm.config.winrm.guest_port
+        end
 
         # Return the results
         return results
@@ -61,23 +63,25 @@ module VagrantWindows
         # Check if a port was specified in the config
         return @env.config.winrm.port if @env.config.winrm.port
 
-        # Check if we have an SSH forwarded port
+        # Check if we have a WinRM forwarded port
         pnum_by_name = nil
         pnum_by_destination = nil
-        @logger.info("Looking for winrm port: #{opts}")
-        @logger.info("Looking for winrm port: #{env.config.winrm.inspect}")
+        @logger.debug("Looking for winrm port: #{opts}")
+        @logger.debug("Looking for winrm port: #{env.config.winrm.inspect}")
 
         env.vm.vm.network_adapters.each do |na| 
           # Look for the port number by destination...
           pnum_by_destination = na.nat_driver.forwarded_ports.detect do |fp|
-            fp.guestport == env.config.winrm.guest_port
+            fp.guestport == @env.config.winrm.guest_port
           end
         end
 
         return pnum_by_destination.hostport if pnum_by_destination
 
         # This should NEVER happen.
-        raise Errors::WinRMPortNotDetected
+        raise Errors::WinRMPortNotDetected,
+          :port => @env.config.winrm.port,
+          :guest_port => @env.config.winrm.guest_port
       end
       
     end #WinRM class

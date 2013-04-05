@@ -39,6 +39,12 @@ module VagrantWindows
     Windows machines as guests.
     DESC
 
+    # This initializes the internationalization strings.
+    def self.setup_i18n
+      I18n.load_path << File.expand_path("locales/en.yml", VagrantWindows.source_root)
+      I18n.reload!
+    end
+
     config(:windows) do
       VagrantWindows::Config::Windows
     end

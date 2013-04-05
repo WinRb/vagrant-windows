@@ -182,27 +182,32 @@ module VagrantWindows
       def shell_execute(command, shell = :powershell)
         exit_status = nil
         
-        if shell.eql? :cmd
-          output = session.cmd(command) do |out,error|
-            print_data(out) if out
-            print_data(error, :red) if error
-          end  
-        elsif shell.eql? :powershell
-          output = session.powershell(command) do |out,error|
-            print_data(out) if out
-            print_data(error, :red) if error
+        begin
+          if shell.eql? :cmd
+            output = session.cmd(command) do |out,error|
+              print_data(out) if out
+              print_data(error, :red) if error
+            end  
+          elsif shell.eql? :powershell
+            output = session.powershell(command) do |out,error|
+              print_data(out) if out
+              print_data(error, :red) if error
+            end
+          else
+            raise Errors::WinRMInvalidShell, :shell => shell
           end
-        else
-          raise Errors::WinRMInvalidShell, "#{shell} is not a valid type of shell"
+
+          exit_status = output[:exitcode]
+          logger.debug exit_status.inspect
+
+          # Return the final exit status
+          return exit_status
+        rescue StandardError => e
+          raise Errors::WinRMExecutionError,
+            :shell => shell,
+            :command => command,
+            :message => e.message
         end
-
-        exit_status = output[:exitcode]
-        logger.debug exit_status.inspect
-
-        # Return the final exit status
-        return exit_status
-      rescue ::WinRM::WinRMHTTPTransportError => e
-          raise Errors::WinRMTimeout, e.message
       end
       
       def load_script(script_file_name)
