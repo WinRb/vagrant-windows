@@ -26,10 +26,7 @@ module VagrantWindows
 
       def initialize(machine)
         @machine = machine
-        @winrm = WinRM.new(machine)
         @logger = Log4r::Logger.new("vagrant_windows::communication::winrmcommunicator")
-        @co = nil
-        
         @logger.debug("initializing WinRMCommunicator")
       end
 
