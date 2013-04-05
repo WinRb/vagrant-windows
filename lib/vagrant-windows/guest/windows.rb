@@ -10,7 +10,7 @@ module VagrantWindows
       def initialize(machine)
         super(machine)
         @machine = machine
-        @logger = Log4r::Logger.new("vagrant::windows::guest")
+        @logger = Log4r::Logger.new("vagrant_windows::guest::windows")
       end
 
       def change_host_name(name)

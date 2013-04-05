@@ -8,7 +8,7 @@ module VagrantWindows
 
       def initialize(vm)
         @vm = vm
-        @logger = Log4r::Logger.new("vagrant::winrm")
+        @logger = Log4r::Logger.new("vagrant_windows::communication::winrm")
       end
 
       # Returns a hash of information necessary for accessing this
