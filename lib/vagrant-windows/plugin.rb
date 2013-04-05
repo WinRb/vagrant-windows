@@ -38,14 +38,9 @@ module VagrantWindows
     This plugin installs a provider that allows Vagrant to manage
     Windows machines as guests.
     DESC
-
-    # This initializes the internationalization strings.
-    def self.setup_i18n
-      I18n.load_path << File.expand_path("locales/en.yml", VagrantWindows.source_root)
-      I18n.reload!
-    end
-
+    
     config(:windows) do
+      setup_i18n()
       VagrantWindows::Config::Windows
     end
       
@@ -56,6 +51,12 @@ module VagrantWindows
     guest(:windows) do
       VagrantWindows::Guest::Windows
     end
+    
+    # This initializes the internationalization strings.
+    def self.setup_i18n
+      I18n.load_path << File.expand_path("locales/en.yml", VagrantWindows.source_root)
+      I18n.reload!
+    end  
       
     #TODO:Puppet provisioner
   end
