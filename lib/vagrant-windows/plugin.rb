@@ -47,7 +47,7 @@ module VagrantWindows
       VagrantWindows::Config::WinRM
     end
       
-    guest("windows") do
+    guest(:windows) do
       VagrantWindows::Guest::Windows
     end
       
