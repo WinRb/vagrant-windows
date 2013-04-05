@@ -10,22 +10,26 @@ if Vagrant::VERSION < "1.1.0"
   raise "The Vagrant Windows plugin is only compatible with Vagrant 1.1+"
 end
 
+# Add vagrant-windows plugin errors
 require "vagrant-windows/errors"
+
+# Add WinRM communication
 require "vagrant-windows/winrm"
+
+# Add Vagrant WinRM communication channel
 require "vagrant-windows/communication/winrm"
+
+# Monkey Patch the VM object to support multiple channels, i.e. WinRM
 require "vagrant-windows/monkey_patches/machine"
 
-# Vagrant doesn't yet support multiple communicators, override SSH with WinRM
-#Vagrant.plugin("2").manager.communicators[:ssh] = Vagrant::Communication::WinRMCommunicator
+# Add our windows specific config object
+require "vagrant-windows/config/windows"
 
-#Add vagrant-windows plugin errors
-#require_relative 'errors'
+# Add our winrm specific config object
+require "vagrant-windows/config/winrm"
 
-#Our communication class
-#require_relative 'winrm'
-
-#Monkey Patch the VM object to support multiple channels
-#require_relative 'monkey_patches/machine'
+# Add the new Vagrant Windows guest
+require "vagrant-windows/guest/windows"
 
 module VagrantPlugins
   module Windows
@@ -37,17 +41,14 @@ module VagrantPlugins
       DESC
 
       config(:windows) do
-        require_relative "config/windows"
         VagrantPlugins::Windows::Config
       end
       
       config(:winrm) do
-        require_relative "config/winrm"
         VagrantPlugins::WinRM::Config
       end
       
       guest("windows") do
-        require_relative 'guest/windows'
         VagrantPlugins::Windows::Guest
       end
       
