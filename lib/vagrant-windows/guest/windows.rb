@@ -66,10 +66,7 @@ module VagrantWindows
 
       def configure_networks(networks)
         @logger.info("configure_networks: #{networks.inspect}")
-        
-        #HACK: Nori is used to process the WQL query results and we don't want coersion of types
-        Nori.advanced_typecasting = false
-        
+
         # The VBox driver 4.0 and 4.1 implement read_mac_addresses, but 4.2 does not?
         begin
           driver_mac_address = @machine.provider.driver.read_mac_addresses.invert
