@@ -131,21 +131,11 @@ module VagrantWindows
 
       def new_session
         opts = endpoint_options()
-
         logger.debug("Creating WinRM session to #{endpoint} with options: #{opts}")
-        
-        begin
-          client = ::WinRM::WinRMWebService.new(endpoint, :plaintext, opts)
-          client.set_timeout(opts[:operation_timeout])
-          client.toggle_nori_type_casting(:off) #we don't want coersion of types
-        rescue ::WinRM::WinRMAuthorizationError => e
-          raise Errors::WinRMAuthorizationError,
-            :user => opts[:user],
-            :password => opts[:pass],
-            :endpoint => endpoint,
-            :message => e.message
-        end
 
+        client = ::WinRM::WinRMWebService.new(endpoint, :plaintext, opts)
+        client.set_timeout(opts[:operation_timeout])
+        client.toggle_nori_type_casting(:off) #we don't want coersion of types
         client
       end
       
