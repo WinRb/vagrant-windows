@@ -17,7 +17,7 @@ require "vagrant-windows/errors"
 require "vagrant-windows/winrm"
 
 # Add Vagrant WinRM communication channel
-require "vagrant-windows/communication/winrm"
+require "vagrant-windows/communication/winrmcommunicator"
 
 # Monkey Patch the VM object to support multiple channels, i.e. WinRM
 require "vagrant-windows/monkey_patches/machine"
