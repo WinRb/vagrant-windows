@@ -14,7 +14,7 @@ end
 require "vagrant-windows/errors"
 
 # Add WinRM communication
-require "vagrant-windows/winrm"
+require "vagrant-windows/communication/winrm"
 
 # Add Vagrant WinRM communication channel
 require "vagrant-windows/communication/winrmcommunicator"
