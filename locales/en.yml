@@ -15,3 +15,10 @@ en:
         Shell: %{shell}
         Command: %{command}
         Message: %{message}
+      winrm_auth_error: |-
+        An authorization error occurred connection to WinRM.
+
+        User: %{user}
+        Password: %{password}
+        Endpoint: %{endpoint}
+        Message: %{message}

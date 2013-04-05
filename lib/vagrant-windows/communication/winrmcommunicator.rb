@@ -53,17 +53,13 @@ module VagrantWindows
       end
       
       def execute(command, opts=nil, &block)
-
-        # Connect to WinRM, giving it a few tries
-        logger.info("Connecting to WinRM: #{@winrm.info[:host]}:#{@winrm.info[:port]}")
-
         opts = {
           :error_check => true,
           :error_class => ::Vagrant::Errors::VagrantError,
           :error_key   => :winrm_bad_exit_status,
           :command     => command,
           :sudo        => false,
-          :shell      => :powershell
+          :shell       => :powershell
         }.merge(opts || {})
 
         # HACK: Ensure credential delegation is supported on the guest (COOK-1172)
@@ -77,7 +73,6 @@ module VagrantWindows
         # Connect via WinRM and execute the command in the shell.
         exceptions = [HTTPClient::KeepAliveDisconnected] 
         exit_status = retryable(:tries => @machine.config.winrm.max_tries, :on => exceptions, :sleep => 10) do
-          logger.debug "WinRM Trying to connect"
           shell_execute(command, opts[:shell], &block)
         end
 
@@ -98,7 +93,7 @@ module VagrantWindows
       
       # Wrap Sudo in execute.... One day we could integrate with UAC, but Icky
       def sudo(command, opts=nil, &block)
-        execute(command,opts,&block)
+        execute(command, opts, &block)
       end
       
       def download(from, to=nil)
@@ -142,19 +137,23 @@ module VagrantWindows
           :user => @machine.config.winrm.username,
           :pass => @machine.config.winrm.password,
           :host => @machine.config.winrm.host,
-          :port => @winrm.info[:port],
+          :port => @machine.config.winrm.port,
           :operation_timeout => @machine.config.winrm.timeout,
           :basic_auth_only => true
         }.merge ({})
+        endpoint = "http://#{opts[:host]}:#{opts[:port]}/wsman"
 
-        # create a session
-        logger.info("Attempting WinRM session with options: #{opts}")
+        logger.debug("Creating WinRM session to #{endpoint} with options: #{opts}")
+        
         begin
-          endpoint = "http://#{opts[:host]}:#{opts[:port]}/wsman"
           client = ::WinRM::WinRMWebService.new(endpoint, :plaintext, opts)
-          client.set_timeout(opts[:operation_timeout]) if opts[:operation_timeout]
-        rescue ::WinRM::WinRMAuthorizationError => error
-          raise ::WinRM::WinRMAuthorizationError.new("#{error.message}@#{opts[:host]}")
+          client.set_timeout(opts[:operation_timeout])
+        rescue ::WinRM::WinRMAuthorizationError => e
+          raise Errors::WinRMAuthorizationError,
+            :user => opts[:user],
+            :password => opts[:pass],
+            :endpoint => endpoint,
+            :message => e.message
         end
 
         client
@@ -182,6 +181,8 @@ module VagrantWindows
       def shell_execute(command, shell = :powershell)
         exit_status = nil
         
+        @logger.debug("#{shell} executing remote: #{command}")
+        
         begin
           if shell.eql? :cmd
             output = session.cmd(command) do |out,error|
@@ -198,7 +199,7 @@ module VagrantWindows
           end
 
           exit_status = output[:exitcode]
-          logger.debug exit_status.inspect
+          @logger.debug exit_status.inspect
 
           # Return the final exit status
           return exit_status

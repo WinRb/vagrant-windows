@@ -18,6 +18,10 @@ module VagrantWindows
     class WinRMExecutionError < VagrantWindowsError
       error_key(:winrm_execution_error)
     end
+    
+    class WinRMAuthorizationError < VagrantWindowsError
+      error_key(:winrm_auth_error)
+    end    
 
   end
 end
