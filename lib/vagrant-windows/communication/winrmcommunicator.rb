@@ -1,9 +1,6 @@
 require 'timeout'
-
-require 'log4r'
 require 'winrm'
-require 'highline'
-
+require 'log4r'
 require 'vagrant/util/ansi_escape_code_remover'
 require 'vagrant/util/file_mode'
 require 'vagrant/util/platform'
@@ -32,9 +29,11 @@ module VagrantWindows
 
       def ready?
         logger.debug("Checking whether WinRM is ready...")
-
+        
         Timeout.timeout(@machine.config.winrm.timeout) do
-          execute "hostname"
+          execute("hostname") do |type, data|
+            @logger.debug("hostname: #{data}")
+          end
         end
 
         # If we reached this point then we successfully connected
@@ -138,25 +137,13 @@ module VagrantWindows
         client.toggle_nori_type_casting(:off) #we don't want coersion of types
         client
       end
-      
+
       def session
         @session ||= new_session
       end
-      
-      def h
-        @highline ||= HighLine.new
-      end
-      
-      def print_data(data, color = :green)
-        if data =~ /\n/
-          data.split(/\n/).each { |d| print_data(d, color) }
-        else
-          puts h.color(data.chomp, color)
-        end
-      end
 
       protected
-      
+
       def endpoint_options
         {
           :user => @machine.config.winrm.username,
@@ -167,7 +154,7 @@ module VagrantWindows
           :basic_auth_only => true
         }.merge ({})
       end
-      
+
       def endpoint
         if !@winrm_endpoint
           opts = endpoint_options()
@@ -177,44 +164,51 @@ module VagrantWindows
       end    
 
       # Executes the command on an SSH connection within a login shell.
-      def shell_execute(command, shell=:powershell)
-        exit_status = nil
-        
+      def shell_execute(command, shell=:powershell, &block)
         @logger.debug("#{shell} executing remote: #{command}")
         
-        begin
-          if shell.eql? :cmd
-            output = session.cmd(command) do |out,error|
-              print_data(out) if out
-              print_data(error, :red) if error
-            end  
-          elsif shell.eql? :powershell
-            output = session.powershell(command) do |out,error|
-              print_data(out) if out
-              print_data(error, :red) if error
-            end
+        if shell.eql? :cmd
+          output = session.cmd(command) do |out, err|
+            handle_out(:stdout, out, &block)
+            handle_out(:stderr, err, &block)
+          end
+        elsif shell.eql? :powershell
+          output = session.powershell(command) do |out, err|
+            handle_out(:stdout, out, &block)
+            handle_out(:stderr, err, &block)
+          end
+        else
+          raise Errors::WinRMInvalidShell, :shell => shell
+        end
+
+        exit_status = output[:exitcode]
+        @logger.debug exit_status.inspect
+
+        # Return the final exit status
+        return exit_status
+        
+      rescue StandardError => e
+        # return a more specific auth error if we 401 status
+        if e.message.include?("401")
+          raise Errors::WinRMAuthorizationError,
+            :user => endpoint_options[:user],
+            :password => endpoint_options[:pass],
+            :endpoint => endpoint,
+            :message => e.message 
+        end
+        raise Errors::WinRMExecutionError,
+          :shell => shell,
+          :command => command,
+          :message => e.message
+      end
+      
+      def handle_out(type, data, &block)
+        if block_given? && data
+          if data =~ /\n/
+            data.split(/\n/).each { |d| block.call(type, d) }
           else
-            raise Errors::WinRMInvalidShell, :shell => shell
+            block.call(type, data)
           end
-
-          exit_status = output[:exitcode]
-          @logger.debug exit_status.inspect
-
-          # Return the final exit status
-          return exit_status
-        rescue StandardError => e
-          # return a more specific auth error if we 401 status
-          if e.message.include?("401")
-            raise Errors::WinRMAuthorizationError,
-              :user => endpoint_options[:user],
-              :password => endpoint_options[:pass],
-              :endpoint => endpoint,
-              :message => e.message 
-          end
-          raise Errors::WinRMExecutionError,
-            :shell => shell,
-            :command => command,
-            :message => e.message
         end
       end
       
