@@ -39,13 +39,6 @@ module VagrantWindows
         # If we reached this point then we successfully connected
         logger.debug("WinRM is ready!")
         true
-      rescue Timeout::Error, HTTPClient::KeepAliveDisconnected => e
-        #, Errors::SSHConnectionRefused, Net::SSH::Disconnect => e
-        # The above errors represent various reasons that WinRM may not be
-        # ready yet. Return false.
-        logger.debug("WinRM not up yet: #{e.inspect}")
-
-        return false
       end
       
       def execute(command, opts=nil, &block)
@@ -84,7 +77,21 @@ module VagrantWindows
         end
 
         # Return the exit status
-        exit_status
+        return exit_status
+        
+      rescue StandardError => e
+        # return a more specific auth error if we 401 status
+        if e.message.include?("401")
+          raise Errors::WinRMAuthorizationError,
+            :user => @machine.config.winrm.username,
+            :password => @machine.config.winrm.password,
+            :endpoint => endpoint,
+            :message => e.message 
+        end
+        raise Errors::WinRMExecutionError,
+          :shell => opts[:shell],
+          :command => command,
+          :message => e.message
       end
       
       # Wrap Sudo in execute.... One day we could integrate with UAC, but Icky
@@ -186,20 +193,6 @@ module VagrantWindows
 
         # Return the final exit status
         return exit_status
-        
-      rescue StandardError => e
-        # return a more specific auth error if we 401 status
-        if e.message.include?("401")
-          raise Errors::WinRMAuthorizationError,
-            :user => endpoint_options[:user],
-            :password => endpoint_options[:pass],
-            :endpoint => endpoint,
-            :message => e.message 
-        end
-        raise Errors::WinRMExecutionError,
-          :shell => shell,
-          :command => command,
-          :message => e.message
       end
       
       def handle_out(type, data, &block)
