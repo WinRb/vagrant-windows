@@ -73,16 +73,15 @@ end
 
 Available Config Parameters:
 
-config.windows.halt_timeout - How long Vagrant should wait for the guest to shutdown before forcing exit, defaults to 30 seconds
-config.windows.halt_check_interval - How often Vagrant should check if the system has shutdown, defaults to 1 second
-
-config.winrm.username - The Windows guest admin user name, defaults to vagrant.
-config.winrm.password - The above's password, defaults to vagrant.
-config.winrm.host - The IP of the guest, but because we use NAT with port forwarding this defaults to localhost.
-config.winrm.guest_port - The guest's WinRM port, defaults to 5985.
-config.winrm.port - The WinRM port on the host, defaults to 5985. You might need to change this if your hosts is also Windows.
-config.winrm.max_tries - The number of retries to connect to WinRM, defaults to 12.
-config.winrm.timeout - The max number of seconds to wait for a WinRM response, defaults to 1800 seconds.
+* ```config.windows.halt_timeout``` - How long Vagrant should wait for the guest to shutdown before forcing exit, defaults to 30 seconds
+* ```config.windows.halt_check_interval``` - How often Vagrant should check if the system has shutdown, defaults to 1 second
+* ```config.winrm.username``` - The Windows guest admin user name, defaults to vagrant.
+* ```config.winrm.password``` - The above's password, defaults to vagrant.
+* ```config.winrm.host``` - The IP of the guest, but because we use NAT with port forwarding this defaults to localhost.
+* ```config.winrm.guest_port``` - The guest's WinRM port, defaults to 5985.
+* ```config.winrm.port``` - The WinRM port on the host, defaults to 5985. You might need to change this if your hosts is also Windows.
+* ```config.winrm.max_tries``` - The number of retries to connect to WinRM, defaults to 12.
+* ```config.winrm.timeout``` - The max number of seconds to wait for a WinRM response, defaults to 1800 seconds.
 
 Note - You need to ensure you specify a config.windows and a config.winrm in your Vagrantfile. Currently there's a problem where
 Vagrant will not load the plugin config even with defaults if at least one of its values doesn't exist in the Vagrantfile.
@@ -101,6 +100,14 @@ What has not been tested
 ========================
 - Vagrant-Windows 0.2.0 has only been tested on an OS X host with Virtual Box 4.2.2
 - Shell provisioning. Shell should work, though I have not vetted it yet.
+
+TODOs
+=========
+1. Test it! We need to test on more hosts, guests, and VBox versions. Help wanted.
+2. Puppet provisioner. Monkey patching the existing Vagrant puppet provisioner isn't easy now that its a plugin to core Vagrant. Ideas?
+3. Unit tests. 
+4. De-hackify the ps-runas chef-solo workaround for COOK-1172 and refactor WinRMCommunicator. 
+5. Better docs.
 
 Troubleshooting
 ===============
