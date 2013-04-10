@@ -10,6 +10,8 @@ if Vagrant::VERSION < "1.1.0"
   raise "The Vagrant Windows plugin is only compatible with Vagrant 1.1+"
 end
 
+require "pathname"
+
 # Add vagrant-windows plugin errors
 require "vagrant-windows/errors"
 
@@ -36,23 +38,21 @@ module VagrantWindows
     Windows machines as guests.
     DESC
     
+    guest(:windows) do
+      VagrantWindows::Guest::Windows
+    end
+    
     config(:windows) do
-      setup_logging()
-      setup_i18n()
       VagrantWindows::Config::Windows
     end
       
     config(:winrm) do
       VagrantWindows::Config::WinRM
     end
-      
-    guest(:windows) do
-      VagrantWindows::Guest::Windows
-    end
     
     # This initializes the internationalization strings.
     def self.setup_i18n
-      I18n.load_path << File.expand_path("locales/en.yml", VagrantWindows.source_root)
+      I18n.load_path << File.expand_path("locales/en.yml", source_root)
       I18n.reload!
     end
     
@@ -84,7 +84,14 @@ module VagrantWindows
         logger = nil
       end
     end
-      
+
+    def self.source_root
+      @source_root ||= Pathname.new(File.expand_path("../../../", __FILE__))
+    end
+
     #TODO:Puppet provisioner
   end
 end
+
+VagrantWindows::Plugin.setup_logging()
+VagrantWindows::Plugin.setup_i18n()
