@@ -10,8 +10,6 @@ if Vagrant::VERSION < "1.1.0"
   raise "The Vagrant Windows plugin is only compatible with Vagrant 1.1+"
 end
 
-require "pathname"
-
 # Add vagrant-windows plugin errors
 require "vagrant-windows/errors"
 
@@ -29,6 +27,9 @@ require "vagrant-windows/config/winrm"
 
 # Add the new Vagrant Windows guest
 require "vagrant-windows/guest/windows"
+
+# Monkey patch the Puppet provisioner
+require "vagrant-windows/provisioners/puppet"
 
 module VagrantWindows
   class Plugin < Vagrant.plugin("2")
@@ -52,7 +53,7 @@ module VagrantWindows
     
     # This initializes the internationalization strings.
     def self.setup_i18n
-      I18n.load_path << File.expand_path("locales/en.yml", source_root)
+      I18n.load_path << File.expand_path("locales/en.yml", VagrantWindows.vagrant_windows_root)
       I18n.reload!
     end
     
@@ -85,11 +86,6 @@ module VagrantWindows
       end
     end
 
-    def self.source_root
-      @source_root ||= Pathname.new(File.expand_path("../../../", __FILE__))
-    end
-
-    #TODO:Puppet provisioner
   end
 end
 
