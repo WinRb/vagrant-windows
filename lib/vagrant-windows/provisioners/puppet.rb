@@ -43,19 +43,20 @@ module VagrantPlugins
             env[:ui].info(data.chomp, :prefix => false)
           end
         end
-      
+
         def verify_binary(binary)
-          if env[:vm].config.vm.guest == :windows
+          if @machine.config.vm.guest.eql? :windows
             command = "command #{binary}"
           else
             command = "which #{binary}"
           end
-          env[:vm].channel.sudo(command,
-          :error_class => PuppetError,
-          :error_key => :not_detected,
-          :binary => binary)
+          @machine.communicate.sudo(
+            command,
+            :error_class => PuppetError,
+            :error_key => :not_detected,
+            :binary => binary)
         end
-      
+
         def verify_shared_folders(folders)
           folders.each do |folder|
             @logger.debug("Checking for shared folder: #{folder}")
