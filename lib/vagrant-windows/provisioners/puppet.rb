@@ -13,11 +13,7 @@ module VagrantPlugins
             module_paths.unshift("/etc/puppet/modules")
 
             # Add the command line switch to add the module path
-            if is_windows
-              options << "--modulepath '#{module_paths.join(';')}'"
-            else
-              options << "--modulepath '#{module_paths.join(':')}'"
-            end
+            options << module_path_options()
           end
 
           options << @manifest_file
@@ -28,22 +24,14 @@ module VagrantPlugins
           if !config.facter.empty?
             facts = []
             config.facter.each do |key, value|
-              if is_windows
-                facts << "$env:FACTER_#{key}='#{value}';"
-              else
-                facts << "FACTER_#{key}='#{value}'"
-              end
+              facts << create_facter_key_value(key, value)
             end
 
             facter = "#{facts.join(" ")} "
           end
           
-          if is_windows
-            command = "cd #{manifests_guest_path}; if($?) \{ #{facter} puppet apply #{options} \}"
-          else
-            command = "cd #{manifests_guest_path} && #{facter}puppet apply #{options} --detailed-exitcodes || [ $? -eq 2 ]"
-          end
-
+          command = puppet_cmd(facter, options)
+          
           @machine.env.ui.info I18n.t("vagrant.provisioners.puppet.running_puppet",
                                       :manifest => @manifest_file)
 
@@ -54,30 +42,45 @@ module VagrantPlugins
         end
 
         def verify_binary(binary)
-          if @machine.config.vm.guest.eql? :windows
-            command = "command #{binary}"
-          else
-            command = "which #{binary}"
-          end
           @machine.communicate.sudo(
-            command,
+            verify_binary_cmd,
             :error_class => PuppetError,
             :error_key => :not_detected,
             :binary => binary)
         end
 
         def verify_shared_folders(folders)
-          if @machine.config.vm.guest.eql? :windows
-            command = "if(-not (test-path #{folder})) \{exit 1\} "
-          else
-            command = "test -d #{folder}"
-          end
           folders.each do |folder|
             @logger.debug("Checking for shared folder: #{folder}")
-            if !@machine.communicate.test(command)
+            if !@machine.communicate.test(verify_shared_folders_cmd)
               raise PuppetError, :missing_shared_folders
             end
           end
+        end
+        
+        def puppet_cmd(facter, options)
+          if is_windows
+            "cd #{manifests_guest_path}; if($?) \{ #{facter} puppet apply #{options} \}"
+          else
+            "cd #{manifests_guest_path} && #{facter}puppet apply #{options} --detailed-exitcodes || [ $? -eq 2 ]"
+          end
+        end
+        
+        def create_facter_key_value(key, value)
+          is_windows ? "$env:FACTER_#{key}='#{value}';" : "FACTER_#{key}='#{value}'"
+        end
+        
+        def module_path_options
+          # windows uses ';' instead of ':'
+          is_windows ? "--modulepath '#{module_paths.join(';')}'" : "--modulepath '#{module_paths.join(':')}'"
+        end
+        
+        def verify_binary_cmd
+          is_windows ? "command #{binary}" : "which #{binary}"
+        end
+        
+        def verify_shared_folders_cmd
+          is_windows ? "if(-not (test-path #{folder})) \{exit 1\} " : "test -d #{folder}"
         end
         
         def is_windows
