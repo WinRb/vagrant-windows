@@ -58,23 +58,19 @@ module VagrantPlugins
         end
 
         def verify_shared_folders(folders)
+          if @machine.config.vm.guest.eql? :windows
+            command = "if(-not (test-path #{folder})) \{exit 1\} "
+          else
+            command = "test -d #{folder}"
+          end
           folders.each do |folder|
             @logger.debug("Checking for shared folder: #{folder}")
-
-
-            if env[:vm].config.vm.guest == :windows
-              if !env[:vm].channel.test("if(-not (test-path #{folder})) \{exit 1\} ")
-                raise PuppetError, :missing_shared_folders
-              end
-            else
-              if !env[:vm].channel.test("test -d #{folder}")
-                raise PuppetError, :missing_shared_folders
-              end
+            if !@machine.communicate.test(command)
+              raise PuppetError, :missing_shared_folders
             end
-
           end
         end
-      
+
       end # Puppet class
     end
   end
