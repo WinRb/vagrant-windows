@@ -4,15 +4,22 @@ module VagrantPlugins
   module Puppet
     module Provisioner
       class Puppet < Vagrant.plugin("2", :provisioner)
-      
-        def run_puppet_client
-          options = [config.options].flatten
-          if env[:vm].config.vm.guest == :windows
-            options << "--modulepath '#{@module_paths.values.join(';')}'" if !@module_paths.empty?
-          else
-            options << "--modulepath '#{@module_paths.values.join(':')}'" if !@module_paths.empty?
-          end
         
+        def run_puppet_apply
+          options = [config.options].flatten
+          module_paths = @module_paths.map { |_, to| to }
+          if !@module_paths.empty?
+            # Prepend the default module path
+            module_paths.unshift("/etc/puppet/modules")
+
+            # Add the command line switch to add the module path
+            if is_windows
+              options << "--modulepath '#{module_paths.join(';')}'"
+            else
+              options << "--modulepath '#{module_paths.join(':')}'"
+            end
+          end
+
           options << @manifest_file
           options = options.join(" ")
 
@@ -21,7 +28,7 @@ module VagrantPlugins
           if !config.facter.empty?
             facts = []
             config.facter.each do |key, value|
-              if env[:vm].config.vm.guest == :windows
+              if is_windows
                 facts << "$env:FACTER_#{key}='#{value}';"
               else
                 facts << "FACTER_#{key}='#{value}'"
@@ -30,17 +37,19 @@ module VagrantPlugins
 
             facter = "#{facts.join(" ")} "
           end
-          if env[:vm].config.vm.guest == :windows
+          
+          if is_windows
             command = "cd #{manifests_guest_path}; if($?) \{ #{facter} puppet apply #{options} \}"
           else
-            command = "cd #{manifests_guest_path} && #{facter}puppet apply #{options}"
+            command = "cd #{manifests_guest_path} && #{facter}puppet apply #{options} --detailed-exitcodes || [ $? -eq 2 ]"
           end
 
-          env[:ui].info I18n.t("vagrant.provisioners.puppet.running_puppet",
-          :manifest => @manifest_file)
+          @machine.env.ui.info I18n.t("vagrant.provisioners.puppet.running_puppet",
+                                      :manifest => @manifest_file)
 
-          env[:vm].channel.sudo(command) do |type, data|
-            env[:ui].info(data.chomp, :prefix => false)
+          @machine.communicate.sudo(command) do |type, data|
+            data.chomp!
+            @machine.env.ui.info(data, :prefix => false) if !data.empty?
           end
         end
 
@@ -69,6 +78,10 @@ module VagrantPlugins
               raise PuppetError, :missing_shared_folders
             end
           end
+        end
+        
+        def is_windows
+          @machine.config.vm.guest.eql? :windows
         end
 
       end # Puppet class
