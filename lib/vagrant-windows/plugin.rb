@@ -19,6 +19,9 @@ require "vagrant-windows/communication/winrmcommunicator"
 # Monkey Patch the VM object to support multiple channels, i.e. WinRM
 require "vagrant-windows/monkey_patches/machine"
 
+# Monkey patch the Puppet provisioner to support PowerShell/Windows
+require "vagrant-windows/monkey_patches/puppet"
+
 # Add our windows specific config object
 require "vagrant-windows/config/windows"
 
@@ -27,9 +30,6 @@ require "vagrant-windows/config/winrm"
 
 # Add the new Vagrant Windows guest
 require "vagrant-windows/guest/windows"
-
-# Monkey patch the Puppet provisioner
-require "vagrant-windows/provisioners/puppet"
 
 module VagrantWindows
   class Plugin < Vagrant.plugin("2")
