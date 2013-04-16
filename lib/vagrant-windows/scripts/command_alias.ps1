@@ -17,7 +17,7 @@ function mkdir ([Switch] $p, [String] $path)
   {
     exit 0
   } else {
-    New-Item $p -Type Directory -Force | Out-Null
+    New-Item $path -Type Directory -Force | Out-Null
   }
 }
 
