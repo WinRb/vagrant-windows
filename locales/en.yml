@@ -15,6 +15,11 @@ en:
         Shell: %{shell}
         Command: %{command}
         Message: %{message}
+      winrm_bad_exit_status: |-
+        The remote command returned a bad exit status of %{exit_status}.
+
+        Shell: %{shell}
+        Command: %{command}
       winrm_auth_error: |-
         An authorization error occurred connecting to WinRM.
 

@@ -44,7 +44,7 @@ module VagrantWindows
       def execute(command, opts=nil, &block)
         opts = {
           :error_check => true,
-          :error_class => ::Vagrant::Errors::VagrantError,
+          :error_class => Errors::WinRMExecutionError,
           :error_key   => :winrm_bad_exit_status,
           :command     => command,
           :sudo        => false,
@@ -59,39 +59,37 @@ module VagrantWindows
           command = load_script("command_alias.ps1") << "\r\n" << command
         end
         
-        # Connect via WinRM and execute the command in the shell.
-        exceptions = [HTTPClient::KeepAliveDisconnected] 
-        exit_status = retryable(:tries => @machine.config.winrm.max_tries, :on => exceptions, :sleep => 10) do
-          shell_execute(command, opts[:shell], &block)
+        exit_status = 0
+        begin
+          # Connect via WinRM and execute the command in the shell.
+          exceptions = [HTTPClient::KeepAliveDisconnected] 
+          exit_status = retryable(:tries => @machine.config.winrm.max_tries, :on => exceptions, :sleep => 10) do
+            shell_execute(command, opts[:shell], &block)
+          end
+        rescue StandardError => e
+          # return a more specific auth error for 401 errors
+          if e.message.include?("401")
+            raise Errors::WinRMAuthorizationError,
+              :user => @machine.config.winrm.username,
+              :password => @machine.config.winrm.password,
+              :endpoint => endpoint,
+              :message => e.message 
+          end
+          # failed for an unknown reason, didn't even get an exit status
+          raise Errors::WinRMExecutionError,
+            :shell => opts[:shell],
+            :command => command,
+            :message => e.message
         end
 
+        # Check for any exit status errors
         logger.debug("#{command} EXIT STATUS #{exit_status.inspect}")
-
-        # Check for any errors
         if opts[:error_check] && exit_status != 0
-          # The error classes expect the translation key to be _key,
-          # but that makes for an ugly configuration parameter, so we
-          # set it here from `error_key`
-          error_opts = opts.merge(:_key => opts[:error_key])
-          raise opts[:error_class], error_opts
+          error_opts = opts.merge(:_key => opts[:error_key], :exit_status => exit_status)
+          raise error_opts[:error_class], error_opts 
         end
 
-        # Return the exit status
-        return exit_status
-        
-      rescue StandardError => e
-        # return a more specific auth error if we 401 status
-        if e.message.include?("401")
-          raise Errors::WinRMAuthorizationError,
-            :user => @machine.config.winrm.username,
-            :password => @machine.config.winrm.password,
-            :endpoint => endpoint,
-            :message => e.message 
-        end
-        raise Errors::WinRMExecutionError,
-          :shell => opts[:shell],
-          :command => command,
-          :message => e.message
+        exit_status
       end
       
       # Wrap Sudo in execute.... One day we could integrate with UAC, but Icky
