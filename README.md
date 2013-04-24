@@ -89,7 +89,7 @@ Vagrant will not load the plugin config even with defaults if at least one of it
 
 What Works?
 ===========
-- vagrant up|hault|reload|provision
+- vagrant up|halt|reload|provision
 - Chef Vagrant Provisioner
 
 What does not work
@@ -158,6 +158,9 @@ References and Shout Outs
 Changelog
 =========
 0.1.1 - Remove extra debug information from command output.
+
 0.1.2 - Added virtual box 4.2 support.
+
 0.1.3 - Added puppet provisioner.
+
 0.2.0 - Converted to Vagrant 1.1.x plugin architecture.
