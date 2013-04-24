@@ -158,6 +158,9 @@ References and Shout Outs
 Changelog
 =========
 0.1.1 - Remove extra debug information from command output.
+
 0.1.2 - Added virtual box 4.2 support.
+
 0.1.3 - Added puppet provisioner.
+
 0.2.0 - Converted to Vagrant 1.1.x plugin architecture.
