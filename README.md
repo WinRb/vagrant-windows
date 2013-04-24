@@ -89,7 +89,7 @@ Vagrant will not load the plugin config even with defaults if at least one of it
 
 What Works?
 ===========
-- vagrant up|hault|reload|provision
+- vagrant up|halt|reload|provision
 - Chef Vagrant Provisioner
 
 What does not work
