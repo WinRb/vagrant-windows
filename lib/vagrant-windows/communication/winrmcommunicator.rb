@@ -51,15 +51,9 @@ module VagrantWindows
           :shell       => :powershell
         }.merge(opts || {})
 
-        # HACK: Ensure credential delegation is supported on the guest (COOK-1172)
-        if command.include?("chef-solo -c")
-          chefsolo_command = command
-          command = load_script("ps_runas.ps1") << "\r\n" << "exit ps-runas \"#{@machine.config.winrm.username}\" \"#{@machine.config.winrm.password}\" \"powershell.exe\" \"-Command #{chefsolo_command}\""
-        else
-          command = load_script("command_alias.ps1") << "\r\n" << command
-        end
-        
+        command = VagrantWindows.load_script("command_alias.ps1") << "\r\n" << command
         exit_status = 0
+        
         begin
           # Connect via WinRM and execute the command in the shell.
           exceptions = [HTTPClient::KeepAliveDisconnected] 
@@ -202,11 +196,7 @@ module VagrantWindows
           end
         end
       end
-      
-      def load_script(script_file_name)
-        File.read(File.expand_path("#{File.dirname(__FILE__)}/../scripts/#{script_file_name}"))
-      end
-        
+
     end #WinRM class
   end
 end

@@ -42,10 +42,9 @@ module VagrantWindows
 
       def mount_shared_folder(name, guestpath, options)
         @logger.info("mount_shared_folder: #{name}")
-        mount_script = TemplateRenderer.render(File.expand_path("#{File.dirname(__FILE__)}/../scripts/mount_volume.ps1"),
-                                          :options => {:mount_point => guestpath, :name => name})
-
-        @machine.communicate.execute(mount_script,{:shell => :powershell})
+        mount_script = VagrantWindows.load_script_template("mount_volume.ps1",
+          :options => {:mount_point => guestpath, :name => name})
+        @machine.communicate.execute(mount_script, {:shell => :powershell})
       end
 
       def mount_nfs(ip, folders)
@@ -101,16 +100,6 @@ module VagrantWindows
 
         #netsh interface ip set address name="Local Area Connection" static 192.168.0.100 255.255.255.0 192.168.0.1 1
         
-      end
-
-      def windows_path(path)
-        p = ''
-        if path =~ /^\//
-          p << 'C:\\'
-        end
-        p << path
-        p.gsub! /\//, "\\"
-        p.gsub /\\\\{0,}/, "\\"
       end
 
     end

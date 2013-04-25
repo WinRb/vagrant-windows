@@ -22,6 +22,9 @@ require "vagrant-windows/monkey_patches/machine"
 # Monkey patch the Puppet provisioner to support PowerShell/Windows
 require "vagrant-windows/monkey_patches/puppet"
 
+# Monkey patch the Chef-Solo provisioner to support PowerShell/Windows
+require "vagrant-windows/monkey_patches/chef_solo"
+
 # Add our windows specific config object
 require "vagrant-windows/config/windows"
 
