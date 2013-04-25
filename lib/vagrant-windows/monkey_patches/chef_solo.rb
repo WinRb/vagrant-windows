@@ -9,11 +9,7 @@ module VagrantPlugins
 
         # This patch is needed until Vagrant supports chef on Windows guests
         define_method(:run_chef_solo) do
-          if is_windows
-            run_chef_solo_on_windows()
-          else
-            run_chef_solo_on_linux.bind(self).()
-          end
+          is_windows ? run_chef_solo_on_windows() : run_chef_solo_on_linux.bind(self).()
         end
         
         def run_chef_solo_on_windows
@@ -24,9 +20,12 @@ module VagrantPlugins
           command_solo << "-j #{@config.provisioning_path}/dna.json "
           command_solo << "#{command_args}"
           
-          command = VagrantWindows.load_script("ps_runas.ps1") << "\r\n"
-          command << "exit ps-runas \"#{@machine.config.winrm.username}\" \"#{@machine.config.winrm.password}\" "
-          command << "\"powershell.exe\" \"-Command #{command_solo}\""
+          command = VagrantWindows.load_script_template("ps_runas.ps1",
+            :options => {
+              :user => machine.config.winrm.username, 
+              :password => @machine.config.winrm.password,
+              :cmd => "powershell.exe",
+              :arguments => "-Command #{command_solo}"})
 
           @config.attempts.times do |attempt|
             if attempt == 0

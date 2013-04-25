@@ -53,4 +53,4 @@ function ps-runas ([String] $user, [String] $password, [String] $cmd, [String] $
   return $exitCode
 }
 
-
+exit ps-runas "<%= options[:user] %>" "<%= options[:password] %>" "<%= options[:cmd] %>" "<%= options[:arguments] %>"
