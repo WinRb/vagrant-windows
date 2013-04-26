@@ -155,19 +155,19 @@ module VagrantWindows
       end
       
       def winrm_port
-        @winrm_port ||= find_winrm_port()
+        @winrm_port ||= find_winrm_host_port()
       end
       
-      def find_winrm_port
-        expected_port = @machine.config.winrm.port
-        @logger.debug("Searching for WinRM port: #{expected_port.inspect}")
+      def find_winrm_host_port
+        expected_guest_port = @machine.config.winrm.guest_port
+        @logger.debug("Searching for WinRM port: #{expected_guest_port.inspect}")
       
         # Look for the forwarded port only by comparing the guest port
         @machine.provider.driver.read_forwarded_ports.each do |_, _, hostport, guestport|
-          return hostport if guestport == expected_port
+          return hostport if guestport == expected_guest_port
         end
         
-        expected_port
+        @machine.config.winrm.port
       end
 
       def endpoint
