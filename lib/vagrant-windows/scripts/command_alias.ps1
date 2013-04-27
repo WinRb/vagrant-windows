@@ -4,7 +4,11 @@ function which {
 }
 
 function test ([Switch] $d, [String] $path) {
-  Resolve-Path $path| Out-Null;
+  if(Test-Path $path)
+  {
+    exit 0
+  }
+  exit 1
 }
 
 function chown {

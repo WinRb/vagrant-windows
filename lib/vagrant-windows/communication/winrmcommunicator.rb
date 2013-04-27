@@ -77,7 +77,6 @@ module VagrantWindows
         end
 
         # Check for any exit status errors
-        logger.debug("#{command} EXIT STATUS #{exit_status.inspect}")
         if opts[:error_check] && exit_status != 0
           error_opts = opts.merge(:_key => opts[:error_key], :exit_status => exit_status)
           raise error_opts[:error_class], error_opts 
@@ -92,21 +91,17 @@ module VagrantWindows
       end
       
       def download(from, to=nil)
-        @logger.debug("Downloading: #{from} to #{to}")
-
-        #TODO: Download impl!
-        #scp_connect do |scp|
-        #  scp.download!(from, to)
-        #end
+        @logger.warn("Downloading: #{from} to #{to} not supported on Windows guests")
       end
       
       def test(command, opts=nil)
-        #TODO: Does this work? Copied from Vagrant
         opts = { :error_check => false }.merge(opts || {})
         execute(command, opts) == 0
       end
       
       def upload(from, to)
+        @logger.debug("Uploading: #{from} to #{to}")
+        
         file = "winrm-upload-#{rand()}"
         file_name = (session.cmd("echo %TEMP%\\#{file}"))[:data][0][:stdout].chomp
         session.powershell <<-EOH
@@ -180,7 +175,7 @@ module VagrantWindows
 
       # Executes the command on an SSH connection within a login shell.
       def shell_execute(command, shell=:powershell, &block)
-        @logger.debug("#{shell} executing remote: #{command}")
+        @logger.debug("#{shell} executing:\n#{command}")
         
         if shell.eql? :cmd
           output = session.cmd(command) do |out, err|
@@ -197,7 +192,7 @@ module VagrantWindows
         end
 
         exit_status = output[:exitcode]
-        @logger.debug exit_status.inspect
+        @logger.debug("Exit status: #{exit_status.inspect}")
 
         # Return the final exit status
         return exit_status
