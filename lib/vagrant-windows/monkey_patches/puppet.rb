@@ -47,6 +47,42 @@ module VagrantPlugins
             @machine.env.ui.info(data, :prefix => false) if !data.empty?
           end
         end
+        
+        def configure(root_config)
+          # Calculate the paths we're going to use based on the environment
+          root_path = @machine.env.root_path
+          @expanded_manifests_path = @config.expanded_manifests_path(root_path)
+          @expanded_module_paths   = @config.expanded_module_paths(root_path)
+          @manifest_file           = @config.manifest_file
+
+          # Setup the module paths
+          @module_paths = []
+          @expanded_module_paths.each_with_index do |path, i|
+            @module_paths << [path, File.join(config.pp_path, "modules-#{i}")]
+          end
+
+          @logger.debug("Syncing folders from puppet configure")
+          @logger.debug("manifests_guest_path = #{manifests_guest_path}")
+          @logger.debug("expanded_manifests_path = #{@expanded_manifests_path}")
+          
+          # Windows guest volume mounting fails without an "id" specified
+          root_config.vm.synced_folder(
+            @expanded_manifests_path, manifests_guest_path,
+            :id =>  "v-manifests-1")
+
+          # Share the manifests directory with the guest
+          #root_config.vm.synced_folder(
+          #  @expanded_manifests_path, manifests_guest_path)
+
+          # Share the module paths
+          count = 0
+          @module_paths.each do |from, to|
+            # Sorry for the cryptic key here, but VirtualBox has a strange limit on
+            # maximum size for it and its something small (around 10)
+            root_config.vm.synced_folder(from, to)
+            count += 1
+          end
+        end
 
         def is_windows
           @machine.config.vm.guest.eql? :windows
