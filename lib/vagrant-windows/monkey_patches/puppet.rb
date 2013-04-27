@@ -5,11 +5,16 @@ module VagrantPlugins
     module Provisioner
       class Puppet < Vagrant.plugin("2", :provisioner)
         
-        run_puppet_apply_on_linux = instance_method(:run_puppet_apply)
-        
         # This patch is needed until Vagrant supports Puppet on Windows guests
+        run_puppet_apply_on_linux = instance_method(:run_puppet_apply)
+        configure_on_linux = instance_method(:configure)
+        
         define_method(:run_puppet_apply) do
           is_windows ? run_puppet_apply_on_windows() : run_puppet_apply_on_linux.bind(self).()
+        end
+        
+        define_method(:configure) do |root_config|
+          is_windows ? configure_on_windows(root_config) : configure_on_linux.bind(self).(root_config)
         end
         
         def run_puppet_apply_on_windows
@@ -48,7 +53,7 @@ module VagrantPlugins
           end
         end
         
-        def configure(root_config)
+        def configure_on_windows(root_config)
           # Calculate the paths we're going to use based on the environment
           root_path = @machine.env.root_path
           @expanded_manifests_path = @config.expanded_manifests_path(root_path)
@@ -66,6 +71,7 @@ module VagrantPlugins
           @logger.debug("expanded_manifests_path = #{@expanded_manifests_path}")
           
           # Windows guest volume mounting fails without an "id" specified
+          # This hacks around that problem and allows the PS mount script to work
           root_config.vm.synced_folder(
             @expanded_manifests_path, manifests_guest_path,
             :id =>  "v-manifests-1")
