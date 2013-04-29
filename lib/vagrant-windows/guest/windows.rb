@@ -16,7 +16,9 @@ module VagrantWindows
       def change_host_name(name)
         @logger.info("change host name to: #{name}")
         #### on windows, renaming a computer seems to require a reboot
-        @machine.communicate.execute("wmic computersystem where name=\"%COMPUTERNAME%\" call rename name=\"#{name}\"")
+        @machine.communicate.execute(
+          "wmic computersystem where name=\"%COMPUTERNAME%\" call rename name=\"#{name}\"",
+          :shell => :cmd)
       end
 
       # TODO: I am sure that ciphering windows versions will be important at some point
