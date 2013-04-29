@@ -2,7 +2,7 @@
 Installing Vagrant-Windows
 ==========================
 
-Install Vagrant 1.1+ using the standard Vagrant installer for your platform.
+Install Vagrant 1.1.x using the standard Vagrant installer for your platform. Vagrant 1.2 reportedly does not work.
 
 Since the Vagrant 1.1 branch is not yet available via rubygem.org, you'll need to build it yourself. Clone this repo,
 and from the root of the repo run:
@@ -91,23 +91,19 @@ What Works?
 ===========
 - vagrant up|halt|reload|provision
 - Chef Vagrant Provisioner
-
-What does not work
-==================
-- Puppet standalone provisioning (new Vagrant plugin architecture broke this)
+- Puppet Vagrant Provisioner
 
 What has not been tested
 ========================
-- Vagrant-Windows 0.2.0 has only been tested on an OS X host with Virtual Box 4.2.2
 - Shell provisioning. Shell should work, though I have not vetted it yet.
 
 TODOs
 =========
 1. Test it! We need to test on more hosts, guests, and VBox versions. Help wanted.
-2. Puppet provisioner. Monkey patching the existing Vagrant puppet provisioner isn't easy now that its a plugin to core Vagrant. Ideas?
+2. Vagrant 1.2 support. Unfortunately it appears there are some breaking changes with guests between Vagrant 1.1. and 1.2.
+3. Chef-Client support.
 3. Unit tests. 
-4. De-hackify the ps-runas chef-solo workaround for COOK-1172 and refactor WinRMCommunicator. 
-5. Better docs.
+4. Better docs.
 
 Troubleshooting
 ===============
