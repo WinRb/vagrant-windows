@@ -1,38 +1,38 @@
-TODO:
- vagrant rdp && vagrant ps to connect to VM
 
- 
-Installing
-==========
+Installing Vagrant-Windows
+==========================
 
- ```
- gem install vagrant-windows
- ```
+Install Vagrant 1.1.x using the standard Vagrant installer for your platform. Vagrant 1.2 reportedly does not work.
+
+Since the Vagrant 1.1 branch is not yet available via rubygem.org, you'll need to build it yourself. Clone this repo,
+and from the root of the repo run:
+
+```
+rake build
+vagrant plugin install pkg/vagrant-windows-0.2.0.gem
+```
 
 Building a Base Box
 ===================
 
 All Windows Machines
 -------------------- 
- -Enable WinRM
-
-  ```
+  -Enable WinRM
+```
    winrm quickconfig -q
    winrm set winrm/config/winrs @{MaxMemoryPerShellMB="512"}
    winrm set winrm/config @{MaxTimeoutms="1800000"}
    winrm set winrm/config/service @{AllowUnencrypted="true"}
    winrm set winrm/config/service/auth @{Basic="true"}
-   ```
-  - Create a vagrant user
-    - For things to work out of the box, username and password should both be vagrant
-
+```
+  - Create a vagrant user, for things to work out of the box username and password should both be "vagrant".
   - Turn off UAC (Msconfig)
   - Disable complex passwords
   
 Servers
 --------
-  - Disable Shutdown Tracker (http://www.jppinto.com/2010/01/how-to-disable-the-shutdown-event-tracker-in-server-20032008/)
-  - Disable "Server Manager" Starting at login (http://www.elmajdal.net/win2k8/How_to_Turn_Off_The_Automatic_Display_of_Server_Manager_At_logon.aspx)
+  - [Disable Shutdown Tracker](http://www.jppinto.com/2010/01/how-to-disable-the-shutdown-event-tracker-in-server-20032008/)
+  - [Disable "Server Manager" Starting at login](http://www.elmajdal.net/win2k8/How_to_Turn_Off_The_Automatic_Display_of_Server_Manager_At_logon.aspx)
   
 The Vagrant File
 ================
@@ -40,52 +40,95 @@ The Vagrant File
 Add the following to your Vagrantfile
 
 ```ruby
-  config.vm.guest = :windows
-
-  config.vm.forward_port 3389, 3390, :name => "rdp", :auto => true
-  config.vm.forward_port 5985, 5985, :name => "winrm", :auto => true
+config.vm.guest = :windows
+config.windows.halt_timeout = 15
+config.winrm.username = "vagrant"
+config.winrm.password = "vagrant"
+config.vm.network :forwarded_port, guest: 3389, host: 3389
+config.vm.network :forwarded_port, guest: 5985, host: 5985
 ```
 
 Example:
 ```ruby
-Vagrant::Config.run do |config|
-
-  #The following timeout configuration is option, however if have
-  #any large remote_file resources in your chef recipes, you may
-  #experience timeouts (reported as 500 responses)
-  config.winrm.timeout = 1800     #Set WinRM Timeout in seconds (Default 30)
+Vagrant.configure("2") do |config|
+  
+  # Max time to wait for the guest to shutdown
+  config.windows.halt_timeout = 15
+  
+  # Admin user name and password
+  config.winrm.username = "vagrant"
+  config.winrm.password = "vagrant"
 
   # Configure base box parameters
-  config.vm.box = "windows2008r2"
-  config.vm.box_url = "./windows-2008-r2.box"
+  config.vm.box = "vagrant-windows2008r2"
+  config.vm.box_url = "./vagrant-windows2008r2.box"
   config.vm.guest = :windows
 
-  config.vm.forward_port 3389, 3390, :name => "rdp", :auto => true
-  config.vm.forward_port 5985, 5985, :name => "winrm", :auto => true
-
-  config.vm.provision :chef_solo do |chef|
-    chef.add_recipe("your::recipe")
-  end
-
+  # Port forward WinRM and RDP
+  config.vm.network :forwarded_port, guest: 3389, host: 3389
+  config.vm.network :forwarded_port, guest: 5985, host: 5985
+  
 end
 ````
 
+Available Config Parameters:
+
+* ```config.windows.halt_timeout``` - How long Vagrant should wait for the guest to shutdown before forcing exit, defaults to 30 seconds
+* ```config.windows.halt_check_interval``` - How often Vagrant should check if the system has shutdown, defaults to 1 second
+* ```config.winrm.username``` - The Windows guest admin user name, defaults to vagrant.
+* ```config.winrm.password``` - The above's password, defaults to vagrant.
+* ```config.winrm.host``` - The IP of the guest, but because we use NAT with port forwarding this defaults to localhost.
+* ```config.winrm.guest_port``` - The guest's WinRM port, defaults to 5985.
+* ```config.winrm.port``` - The WinRM port on the host, defaults to 5985. You might need to change this if your hosts is also Windows.
+* ```config.winrm.max_tries``` - The number of retries to connect to WinRM, defaults to 12.
+* ```config.winrm.timeout``` - The max number of seconds to wait for a WinRM response, defaults to 1800 seconds.
+
+Note - You need to ensure you specify a config.windows and a config.winrm in your Vagrantfile. Currently there's a problem where
+Vagrant will not load the plugin config even with defaults if at least one of its values doesn't exist in the Vagrantfile.
+
+
 What Works?
 ===========
-- vagrant up|hault|reload|provision
+- vagrant up|halt|reload|provision
 - Chef Vagrant Provisioner
-- Puppet standalone provisioning
+- Puppet Vagrant Provisioner
 
 What has not been tested
 ========================
-- Everything Else!!!
-- Shell provisioning
-  - Shell should work, though I have not vetted it yet.
+- Shell provisioning. Shell should work, though I have not vetted it yet.
 
-What does not work
-==================
-- <s>Complex networking setups</s> - Fixed in 0.0.3
-  - Note that I have not tested the Virtual Box 4.0 Driver, all _should_ work. Can someone please confirm?
+TODOs
+=========
+1. Test it! We need to test on more hosts, guests, and VBox versions. Help wanted.
+2. Vagrant 1.2 support. Unfortunately it appears there are some breaking changes with guests between Vagrant 1.1. and 1.2.
+3. Chef-Client support.
+3. Unit tests. 
+4. Better docs.
+
+Troubleshooting
+===============
+
+I get a 401 auth error from WinRM
+---------------------------------
+- Ensure you've followed the WinRM configuration instructions above.
+- Ensure you can manually login using the specified config.winrm.username you've specified in your Vagrantfile.
+- Ensure your password hasn't expired.
+- Ensure your password doesn't need to be changed because of policy.
+
+I get a non-401 error from WinRM waiting for the VM to boot
+-----------------------------------------------------------
+- Ensure you've properly setup port forwarding of WinRM
+- Make sure your VM can boot manually through VBox.
+
+SQL Server cookbook fails to install through Vagrant
+----------------------------------------------------
+- Ensure UAC is turned off
+- Ensure your vagrant user is an admin on the guest
+- The SQL Server installer uses a lot of resources, ensure WinRM Quota Management is properly configured to give it enough resources.
+- See [COOK-1172](http://tickets.opscode.com/browse/COOK-1172) and http://stackoverflow.com/a/15235996/82906 for more information.
+
+If all else fails try running [vagrant with debug logging](http://docs.vagrantup.com/v2/debugging.html), perhaps that will give
+you enough insight to fix the problem or file an issue.
 
 What Can I do to help?
 ======================
@@ -104,12 +147,16 @@ Contributing
 References and Shout Outs
 =========================
 - Chris McClimans - Vagrant Branch (https://github.com/hh/vagrant/blob/feature/winrm/)
--Dan Wanek - WinRM GEM (https://github.com/zenchild/WinRM)
+- Dan Wanek - WinRM GEM (https://github.com/zenchild/WinRM)
   - +1 For being super responsive to pull requests.
 
 
 Changelog
 =========
 0.1.1 - Remove extra debug information from command output.
-0.1.2 - added virtual box 4.2 support
-0.1.3 - added puppet provisioner
+
+0.1.2 - Added virtual box 4.2 support.
+
+0.1.3 - Added puppet provisioner.
+
+0.2.0 - Converted to Vagrant 1.1.x plugin architecture.

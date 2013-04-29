@@ -16,6 +16,5 @@ Gem::Specification.new do |gem|
   gem.version       = VagrantWindows::VERSION
 
   gem.add_runtime_dependency "winrm", "~> 1.1.1"
-  gem.add_runtime_dependency 'vagrant', "~> 1.0"
   gem.add_runtime_dependency 'highline'
 end

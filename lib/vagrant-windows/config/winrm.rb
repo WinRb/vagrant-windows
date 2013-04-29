@@ -1,6 +1,9 @@
-module Vagrant
+require "vagrant"
+
+module VagrantWindows
   module Config
-    class WinRM < Vagrant::Config::Base
+    class WinRM < Vagrant.plugin("2", :config)
+
       attr_accessor :username
       attr_accessor :password
       attr_accessor :host
@@ -8,24 +11,41 @@ module Vagrant
       attr_accessor :guest_port
       attr_accessor :max_tries
       attr_accessor :timeout
-
+      
       def initialize
-        @username = "vagrant"
-        @password = "vagrant"
-        @guest_port = 5985
-        @host = "localhost"
-        @max_tries = 12
-        @timeout = 1800
+        @username   = UNSET_VALUE
+        @password   = UNSET_VALUE
+        @host       = UNSET_VALUE
+        @port       = UNSET_VALUE
+        @guest_port = UNSET_VALUE
+        @max_tries  = UNSET_VALUE
+        @timeout    = UNSET_VALUE
       end
 
-      def validate(env, errors)
-        [:username, :password, :host, :max_tries, :timeout].each do |field|
-          errors.add(I18n.t("vagrant.config.common.error_empty", :field => field)) if !instance_variable_get("@#{field}".to_sym)
-        end
+      def validate(machine)
+        errors = []
 
+        errors << "winrm.username cannot be nil."   if machine.config.winrm.username.nil?
+        errors << "winrm.password cannot be nil."   if machine.config.winrm.password.nil?
+        errors << "winrm.host cannot be nil."       if machine.config.winrm.host.nil?
+        errors << "winrm.port cannot be nil."       if machine.config.winrm.port.nil?
+        errors << "winrm.guest_port cannot be nil." if machine.config.winrm.guest_port.nil?
+        errors << "winrm.max_tries cannot be nil."  if machine.config.winrm.max_tries.nil?
+        errors << "winrm.timeout cannot be nil."    if machine.config.winrm.timeout.nil?
+
+        { "WinRM" => errors }
       end
+
+      def finalize!
+        @username = "vagrant" if @username == UNSET_VALUE
+        @password = "vagrant" if @password == UNSET_VALUE
+        @host = "localhost"   if @host == UNSET_VALUE
+        @port = 5985          if @port == UNSET_VALUE
+        @guest_port = 5985    if @guest_port == UNSET_VALUE
+        @max_tries = 12       if @max_tries == UNSET_VALUE
+        @timeout = 1800       if @timeout == UNSET_VALUE
+      end
+
     end
   end
 end
-
-Vagrant.config_keys.register(:winrm) { Vagrant::Config::WinRM }
