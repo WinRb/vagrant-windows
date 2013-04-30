@@ -2,15 +2,10 @@
 Installing Vagrant-Windows
 ==========================
 
-Install Vagrant 1.1.x using the standard Vagrant installer for your platform. Vagrant 1.2 reportedly does not work.
+Vagrant 1.0 should use <code>gem "vagrant-windows", "~> 0.1.2"</code>
+Vagrant 1.1 should use <code>gem "vagrant-windows", "~> 1.0.0"</code>
+Vagrant 1.2 is not yet supported. There needs to be a refactor to support capabilities. We are looking for a backwards compatiable way to implement this.
 
-Since the Vagrant 1.1 branch is not yet available via rubygem.org, you'll need to build it yourself. Clone this repo,
-and from the root of the repo run:
-
-```
-rake build
-vagrant plugin install pkg/vagrant-windows-0.2.0.gem
-```
 
 Building a Base Box
 ===================
@@ -159,4 +154,4 @@ Changelog
 
 0.1.3 - Added puppet provisioner.
 
-0.2.0 - Converted to Vagrant 1.1.x plugin architecture.
+1.0.0 - Converted to Vagrant 1.1.x plugin architecture.
