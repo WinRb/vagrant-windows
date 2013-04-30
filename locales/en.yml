@@ -1,0 +1,29 @@
+en:
+  vagrant_windows:
+
+    errors:
+      winrm_port_not_detected: |-
+        Vagrant could not detect the WinRM port.
+
+        Host port: %{port}
+        Guest port: %{guest_port}
+      winrm_invalid_shell: |-
+        %{shell} is not a supported type of Windows shell.
+      winrm_execution_error: |-
+        An error occurred executing a remote WinRM command.
+
+        Shell: %{shell}
+        Command: %{command}
+        Message: %{message}
+      winrm_bad_exit_status: |-
+        The remote command returned a bad exit status of %{exit_status}.
+
+        Shell: %{shell}
+        Command: %{command}
+      winrm_auth_error: |-
+        An authorization error occurred connecting to WinRM.
+
+        User: %{user}
+        Password: %{password}
+        Endpoint: %{endpoint}
+        Message: %{message}

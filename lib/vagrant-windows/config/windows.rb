@@ -1,27 +1,31 @@
-module Vagrant
+require "vagrant"
+
+module VagrantWindows
   module Config
-    class Windows < Vagrant::Config::Base
-      attr_accessor :winrm_user
-      attr_accessor :winrm_password
+    class Windows < Vagrant.plugin("2", :config)
+
       attr_accessor :halt_timeout
       attr_accessor :halt_check_interval
-      attr_accessor :device
       
       def initialize
-        @winrm_user = 'vagrant'
-        @winrm_password = 'vagrant'
-        @halt_timeout = 30
-        @halt_check_interval = 1
-        @device = "e1000g"
+        @halt_timeout        = UNSET_VALUE
+        @halt_check_interval = UNSET_VALUE
       end
 
-      def validate(env, errors)
-        [ :winrm_user, :winrm_password].each do |field|
-          errors.add(I18n.t("vagrant.config.common.error_empty", :field => field)) if !instance_variable_get("@#{field}".to_sym)
-        end
+      def validate(machine)
+        errors = []
+
+        errors << "windows.halt_timeout cannot be nil."        if machine.config.windows.halt_timeout.nil?
+        errors << "windows.halt_check_interval cannot be nil." if machine.config.windows.halt_check_interval.nil?
+
+        { "Windows Guest" => errors }
       end
+
+      def finalize!
+        @halt_timeout = 30       if @halt_timeout == UNSET_VALUE
+        @halt_check_interval = 1 if @halt_check_interval == UNSET_VALUE
+      end
+
     end
   end
 end
-
-Vagrant.config_keys.register(:windows) { Vagrant::Config::Windows }
