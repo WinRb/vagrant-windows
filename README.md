@@ -138,6 +138,19 @@ Contributing
 4. Push to the branch (git push origin my_feature_branch)
 5. Create a pull requst from your branch into master (Please be sure to provide enough detail for us to cipher what this change is doing)
 
+Running tests
+=============
+Clone this repository and use [Bundler](http://gembundler.com) to get the dependencies:
+
+```
+$ bundle install
+```
+
+Once you have the dependencies, you can run the tests with `rake`:
+
+```
+$ rake spec
+```
 
 References and Shout Outs
 =========================
