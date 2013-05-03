@@ -6,6 +6,13 @@ Installing Vagrant-Windows
 - Vagrant 1.1 should use <code>gem "vagrant-windows", "~> 1.0.0"</code>
 - Vagrant 1.2 is not yet supported. There needs to be a refactor to support capabilities. We are looking for a backwards compatiable way to implement this.
 
+Supported Guest Operating Systems (Your VM)
+===========================================
+- Windows 7
+- Windows 2008
+- Windows 2008 R2
+- Windows 2012
+- Windows 8
 
 Building a Base Box
 ===================
