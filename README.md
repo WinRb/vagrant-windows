@@ -168,3 +168,6 @@ Changelog
 0.1.3 - Added puppet provisioner.
 
 1.0.0 - Converted to Vagrant 1.1.x plugin architecture.
+
+1.1.1 - Fix #29 Monkey Patch the 4.2 driver to include read_mac_addresses. 
+        use read_mac_addresses in all cases.

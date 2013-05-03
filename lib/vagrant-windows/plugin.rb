@@ -16,6 +16,9 @@ require "vagrant-windows/errors"
 # Add Vagrant WinRM communication channel
 require "vagrant-windows/communication/winrmcommunicator"
 
+# Monkey patch the Puppet provisioner to support PowerShell/Windows
+require "vagrant-windows/monkey_patches/vbox_42_driver"
+
 # Monkey Patch the VM object to support multiple channels, i.e. WinRM
 require "vagrant-windows/monkey_patches/machine"
 

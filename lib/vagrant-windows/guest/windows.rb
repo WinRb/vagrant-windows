@@ -67,14 +67,7 @@ module VagrantWindows
 
       def configure_networks(networks)
         @logger.info("configure_networks: #{networks.inspect}")
-
-        # The VBox driver 4.0 and 4.1 implement read_mac_addresses, but 4.2 does not?
-        begin
-          driver_mac_address = @machine.provider.driver.read_mac_addresses.invert
-        rescue NoMethodError
-          driver_mac_address = {}
-          driver_mac_address[@machine.provider.driver.read_mac_address] = "macaddress1"
-        end
+        driver_mac_address = @machine.provider.driver.read_mac_addresses.invert
 
         vm_interface_map = {}
 
