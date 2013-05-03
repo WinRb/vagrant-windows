@@ -8,6 +8,8 @@ Installing Vagrant-Windows
 
 Supported Guest Operating Systems (Your VM)
 ===========================================
+_Does NOT work with Windows 2003 or XP_
+
 - Windows 7
 - Windows 2008
 - Windows 2008 R2
