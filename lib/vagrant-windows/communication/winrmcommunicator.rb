@@ -51,7 +51,9 @@ module VagrantWindows
           :shell       => :powershell
         }.merge(opts || {})
 
-        command = VagrantWindows.load_script("command_alias.ps1") << "\r\n" << command
+        if opts[:shell].eql? :powershell
+          command = VagrantWindows.load_script("command_alias.ps1") << "\r\n" << command
+        end
         exit_status = 0
         
         begin
