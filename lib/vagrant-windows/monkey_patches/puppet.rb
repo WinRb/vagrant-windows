@@ -85,7 +85,7 @@ module VagrantPlugins
           @module_paths.each do |from, to|
             # Sorry for the cryptic key here, but VirtualBox has a strange limit on
             # maximum size for it and its something small (around 10)
-            root_config.vm.synced_folder(from, to)
+            root_config.vm.synced_folder(from, to, :id => "v-modules-#{count}")
             count += 1
           end
         end
