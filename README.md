@@ -6,6 +6,15 @@ Installing Vagrant-Windows
 - Vagrant 1.1 should use <code>gem "vagrant-windows", "~> 1.0.0"</code>
 - Vagrant 1.2 is not yet supported. There needs to be a refactor to support capabilities. We are looking for a backwards compatiable way to implement this.
 
+Supported Guest Operating Systems (Your VM)
+===========================================
+_Does NOT work with Windows 2003 or XP_
+
+- Windows 7
+- Windows 2008
+- Windows 2008 R2
+- Windows 2012
+- Windows 8
 
 Building a Base Box
 ===================
@@ -168,3 +177,6 @@ Changelog
 0.1.3 - Added puppet provisioner.
 
 1.0.0 - Converted to Vagrant 1.1.x plugin architecture.
+
+1.1.1 - Fix #29 Monkey Patch the 4.2 driver to include read_mac_addresses. 
+        use read_mac_addresses in all cases.
