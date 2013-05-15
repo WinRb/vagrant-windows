@@ -115,11 +115,11 @@ module VagrantWindows
         Base64.encode64(IO.binread(from)).gsub("\n",'').chars.to_a.each_slice(8000-file_name.size) do |chunk|
           out = session.cmd( "echo #{chunk.join} >> \"#{file_name}\"" )
         end
-        execute "mkdir [System.IO.Path]::GetDirectoryName(\"#{to}\")"
+        execute "mkdir $([System.IO.Path]::GetDirectoryName(\"#{to}\"))"
         execute <<-EOH
           $base64_string = Get-Content \"#{file_name}\"
           $bytes  = [System.Convert]::FromBase64String($base64_string) 
-          $new_file = [System.IO.Path]::GetFullPath(\"#{to}\")
+          $new_file = [System.IO.Path]::GetFullPath(\"#{to}.ps1\")
           [System.IO.File]::WriteAllBytes($new_file,$bytes)
         EOH
       end
