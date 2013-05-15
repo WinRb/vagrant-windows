@@ -119,7 +119,7 @@ module VagrantWindows
         execute <<-EOH
           $base64_string = Get-Content \"#{file_name}\"
           $bytes  = [System.Convert]::FromBase64String($base64_string) 
-          $new_file = [System.IO.Path]::GetFullPath(\"#{to}\")
+          $new_file = [System.IO.Path]::GetFullPath(\"#{to}.ps1\")
           [System.IO.File]::WriteAllBytes($new_file,$bytes)
         EOH
       end
