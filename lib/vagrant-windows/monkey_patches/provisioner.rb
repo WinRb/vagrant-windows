@@ -15,7 +15,7 @@ module VagrantPlugins
             args = ""
             args = " #{config.args}" if config.args
             fixed_upload_path  = "#{config.upload_path}.ps1".gsub('/','\\')
-            command = "$old = Get-ExecutionPolicy;Set-ExecutionPolicy Unrestricted -force;\& #{fixed_upload_path};Set-ExecutionPolicy $old -force"
+            command = "$old = Get-ExecutionPolicy;Set-ExecutionPolicy Unrestricted -force;\& #{fixed_upload_path}#{args};Set-ExecutionPolicy $old -force"
 
             with_script_file do |path|
             # Upload the script to the machine
