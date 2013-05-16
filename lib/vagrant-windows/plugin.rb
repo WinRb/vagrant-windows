@@ -6,8 +6,8 @@ end
 
 # This is a sanity check to make sure no one is attempting to install
 # this into an early Vagrant version.
-if Vagrant::VERSION < "1.1.0"
-  raise "The Vagrant Windows plugin is only compatible with Vagrant 1.1+"
+if Vagrant::VERSION < "1.2.0"
+  raise "The Vagrant Windows plugin is only compatible with Vagrant 1.2+"
 end
 
 # Add vagrant-windows plugin errors
@@ -44,19 +44,39 @@ module VagrantWindows
     This plugin installs a provider that allows Vagrant to manage
     Windows machines as guests.
     DESC
-    
-    guest(:windows) do
-      VagrantWindows::Guest::Windows
-    end
-    
+
     config(:windows) do
       VagrantWindows::Config::Windows
     end
-      
+
     config(:winrm) do
       VagrantWindows::Config::WinRM
     end
-    
+
+    guest(:windows) do
+      VagrantWindows::Guest::Windows
+    end
+
+    guest_capability(:windows, :change_host_name) do
+      require_relative "guest/cap/change_host_name"
+      VagrantWindows::Guest::Cap::ChangeHostName
+    end
+
+    guest_capability(:windows, :configure_networks) do
+      require_relative "guest/cap/configure_networks"
+      VagrantWindows::Guest::Cap::ConfigureNetworks
+    end
+
+    guest_capability(:windows, :halt) do
+      require_relative "guest/cap/halt"
+      VagrantWindows::Guest::Cap::Halt
+    end
+
+    guest_capability(:windows, :mount_virtualbox_shared_folder) do
+      require_relative "guest/cap/mount_virtualbox_shared_folder"
+      VagrantWindows::Guest::Cap::MountVirtualBoxSharedFolder
+    end
+
     # This initializes the internationalization strings.
     def self.setup_i18n
       I18n.load_path << File.expand_path("locales/en.yml", VagrantWindows.vagrant_windows_root)
