@@ -97,6 +97,9 @@ module VagrantWindows
       end
       
       def test(command, opts=nil)
+        # HACK: to speed up Vagrant 1.2 OS detection, skip checking for *nix OS
+        return false if not (command =~ /^uname|^cat \/etc|^cat \/proc|grep 'Fedora/).nil?
+        
         opts = { :error_check => false }.merge(opts || {})
         execute(command, opts) == 0
       end
