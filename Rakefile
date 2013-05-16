@@ -11,5 +11,5 @@ require "bundler/gem_tasks"
 # Install the `spec` task so that we can run tests.
 RSpec::Core::RakeTask.new
 
-# Default task is to run the unit tests
+# Default task is to build the gem
 task :default => "build"
