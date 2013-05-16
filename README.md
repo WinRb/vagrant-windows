@@ -4,7 +4,7 @@ Installing Vagrant-Windows
 
 - Vagrant 1.0 should use <code>gem "vagrant-windows", "~> 0.1.2"</code>
 - Vagrant 1.1 should use <code>gem "vagrant-windows", "~> 1.0.0"</code>
-- Vagrant 1.2 is not yet supported. There needs to be a refactor to support capabilities. We are looking for a backwards compatiable way to implement this.
+- Vagrant 1.2 should use <code>gem "vagrant-windows", "~> 1.1.0"</code>
 
 Supported Guest Operating Systems (Your VM)
 ===========================================
@@ -104,8 +104,7 @@ What has not been tested
 TODOs
 =========
 1. Test it! We need to test on more hosts, guests, and VBox versions. Help wanted.
-2. Vagrant 1.2 support. Unfortunately it appears there are some breaking changes with guests between Vagrant 1.1. and 1.2.
-3. Chef-Client support.
+2. Chef-Client support.
 3. Unit tests. 
 4. Better docs.
 
@@ -147,7 +146,7 @@ Contributing
 4. Push to the branch (git push origin my_feature_branch)
 5. Create a pull requst from your branch into master (Please be sure to provide enough detail for us to cipher what this change is doing)
 
-Running tests
+Development
 =============
 Clone this repository and use [Bundler](http://gembundler.com) to get the dependencies:
 
@@ -158,8 +157,19 @@ $ bundle install
 Once you have the dependencies, you can run the tests with `rake`:
 
 ```
-$ rake spec
+$ bundle exec rake spec
 ```
+
+If those pass, you're ready to start developing the plugin. You can test
+the plugin without installing it into your Vagrant environment by just
+creating a [Vagrantfile](http://docs.vagrantup.com/v2/plugins/packaging.html)
+in the top level of this directory (it is gitignored) that uses it, and
+use bundler to execute Vagrant:
+
+```
+$ bundle exec vagrant up
+```
+
 
 References and Shout Outs
 =========================
@@ -178,5 +188,7 @@ Changelog
 
 1.0.0 - Converted to Vagrant 1.1.x plugin architecture.
 
-1.1.1 - Fix #29 Monkey Patch the 4.2 driver to include read_mac_addresses. 
+1.0.1 - Fix #29 Monkey Patch the 4.2 driver to include read_mac_addresses. 
         use read_mac_addresses in all cases.
+
+1.1.0 - Converted to Vagrant 1.2.x plugin architecture.
