@@ -1,8 +1,9 @@
 GIT
   remote: git://github.com/mitchellh/vagrant.git
-  revision: 52448c97cc1ee506bacdff4bd679ca497bd7cf1c
+  revision: 64e360814c3ad960d810456add977fd4c7d47ce6
+  tag: v1.1.5
   specs:
-    vagrant (1.2.3.dev)
+    vagrant (1.1.5)
       childprocess (~> 0.3.7)
       erubis (~> 2.7.0)
       i18n (~> 0.6.0)
@@ -14,7 +15,7 @@ GIT
 PATH
   remote: .
   specs:
-    vagrant-windows (1.0.1)
+    vagrant-windows (1.0.3)
       highline
       winrm (~> 1.1.1)
 
@@ -29,12 +30,12 @@ GEM
       ffi (~> 1.0, >= 1.0.11)
     diff-lcs (1.1.3)
     erubis (2.7.0)
-    ffi (1.4.0)
+    ffi (1.8.1)
     gssapi (1.0.3)
       ffi (>= 1.0.1)
     gyoku (1.0.0)
       builder (>= 2.1.2)
-    highline (1.6.16)
+    highline (1.6.18)
     httpclient (2.2.0.2)
     httpi (0.9.7)
       rack
@@ -44,7 +45,7 @@ GEM
     log4r (1.1.10)
     logging (1.6.2)
       little-plugger (>= 1.1.3)
-    net-scp (1.1.0)
+    net-scp (1.1.1)
       net-ssh (>= 2.6.5)
     net-ssh (2.6.7)
     nokogiri (1.5.9)
@@ -64,7 +65,7 @@ GEM
       nokogiri (>= 1.4.0)
       nori (~> 1.0)
       wasabi (~> 1.0)
-    uuidtools (2.1.3)
+    uuidtools (2.1.4)
     wasabi (1.0.0)
       nokogiri (>= 1.4.0)
     winrm (1.1.2)

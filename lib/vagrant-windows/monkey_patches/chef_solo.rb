@@ -1,4 +1,4 @@
-require "#{VagrantWindows::vagrant_root}/plugins/provisioners/chef/provisioner/chef_solo"
+require "#{Vagrant::source_root}/plugins/provisioners/chef/provisioner/chef_solo"
 
 module VagrantPlugins
   module Chef
