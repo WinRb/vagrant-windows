@@ -1,8 +1,11 @@
-require "#{VagrantWindows::vagrant_root}/plugins/provisioners/shell/provisioner"
+require "#{Vagrant::source_root}/plugins/provisioners/shell/provisioner"
+require "vagrant-windows/helper"
 
 module VagrantPlugins
   module Shell
       class Provisioner < Vagrant.plugin("2", :provisioner)
+        
+        include VagrantWindows::Helper
 
         # This patch is needed until Vagrant supports Puppet on Windows guests
         provision_on_linux = instance_method(:provision)
@@ -18,29 +21,64 @@ module VagrantPlugins
             with_script_file do |path|
             # Upload the script to the machine
             @machine.communicate.tap do |comm|
-                # Do the best effor to found what type of script or file is
-                # to set ot the upload_path 
-                ext = File.extname(path.to_s)
-                fixed_upload_path  = "#{config.upload_path}#{ext}"
-                comm.upload(path.to_s, fixed_upload_path)
+              # Ensure the uploaded script has a file extension, by default
+              # config.upload_path from vagrant core does not
+              fixed_upload_path = if File.extname(config.upload_path) == ""
+                "#{config.upload_path}#{File.extname(path.to_s)}"
+              else
+                config.upload_path
+              end
+              comm.upload(path.to_s, fixed_upload_path)
 
-                execution_upload_path  = "#{fixed_upload_path}".gsub('/','\\')
-                command = "$old = Get-ExecutionPolicy;Set-ExecutionPolicy Unrestricted -force;#{execution_upload_path}#{args};Set-ExecutionPolicy $old -force"
-                # Execute it with sudo
-                comm.sudo(command) do |type, data|
+              command = <<-EOH
+              $old = Get-ExecutionPolicy;
+              Set-ExecutionPolicy Unrestricted -force;
+              #{win_friendly_path(fixed_upload_path)}#{args};
+              Set-ExecutionPolicy $old -force
+              EOH
+              
+              # Execute it with sudo
+              comm.sudo(command) do |type, data|
                 if [:stderr, :stdout].include?(type)
-                    # Output the data with the proper color based on the stream.
-                    color = type == :stdout ? :green : :red
+                  # Output the data with the proper color based on the stream.
+                  color = type == :stdout ? :green : :red
 
-                    # Note: Be sure to chomp the data to avoid the newlines that the
-                    # Chef outputs.
-                    @machine.env.ui.info(data.chomp, :color => color, :prefix => false)
+                  # Note: Be sure to chomp the data to avoid the newlines that the
+                  # Chef outputs.
+                  @machine.env.ui.info(data.chomp, :color => color, :prefix => false)
                 end
-                end
+              end
+              
             end
-            end
+          end
         end
 
+
+        protected
+
+        # This method yields the path to a script to upload and execute
+        # on the remote server. This method will properly clean up the
+        # script file if needed.
+        def with_script_file
+          if config.path
+            # Just yield the path to that file...
+            yield config.path
+          else
+            # Otherwise we have an inline script, we need to Tempfile it,
+            # and handle it specially...
+            file = Tempfile.new(['vagrant-powershell', '.ps1'])
+
+            begin
+              file.write(config.inline)
+              file.fsync
+              file.close
+              yield file.path
+            ensure
+              file.close
+              file.unlink
+            end
+          end
+        end
 
         def is_windows
             @machine.config.vm.guest.eql? :windows
