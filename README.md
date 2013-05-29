@@ -96,10 +96,7 @@ What Works?
 - vagrant up|halt|reload|provision
 - Chef Vagrant Provisioner
 - Puppet Vagrant Provisioner
-
-What has not been tested
-========================
-- Shell provisioning. Shell should work, though I have not vetted it yet.
+- Shell Vagrant provisioner. Batch files or PowerShell (ps1) scripts are supported as well as inline scripts.
 
 TODOs
 =========
