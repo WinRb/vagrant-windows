@@ -1,4 +1,3 @@
-
 Installing Vagrant-Windows
 ==========================
 
@@ -48,7 +47,6 @@ config.vm.guest = :windows
 config.windows.halt_timeout = 15
 config.winrm.username = "vagrant"
 config.winrm.password = "vagrant"
-config.vm.network :forwarded_port, guest: 3389, host: 3389
 config.vm.network :forwarded_port, guest: 5985, host: 5985
 ```
 
