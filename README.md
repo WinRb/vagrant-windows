@@ -1,4 +1,3 @@
-
 Installing Vagrant-Windows
 ==========================
 
@@ -32,6 +31,7 @@ All Windows Machines
   - Create a vagrant user, for things to work out of the box username and password should both be "vagrant".
   - Turn off UAC (Msconfig)
   - Disable complex passwords
+  - Optional: Start WinRM a few minutes faster by running: "sc config WinRM start= auto" (default is delayed-auto)
   
 Servers
 --------
