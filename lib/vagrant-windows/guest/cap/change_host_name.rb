@@ -11,3 +11,4 @@ module VagrantWindows
       end
     end
   end
+end
