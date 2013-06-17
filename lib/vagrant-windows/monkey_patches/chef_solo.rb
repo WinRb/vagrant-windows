@@ -1,4 +1,3 @@
-require "vagrant"
 require "#{Vagrant::source_root}/plugins/provisioners/chef/provisioner/chef_solo"
 
 module VagrantPlugins

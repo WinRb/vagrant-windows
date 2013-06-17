@@ -1,4 +1,3 @@
-require "vagrant"
 require "#{Vagrant::source_root}/plugins/provisioners/puppet/provisioner/puppet"
 
 module VagrantPlugins
