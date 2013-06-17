@@ -19,6 +19,9 @@ require "vagrant-windows/communication/winrmcommunicator"
 # Monkey patch the vbox42 driver 
 require "vagrant-windows/monkey_patches/vbox_42_driver"
 
+# Monkey Patch the VM config object to support windows guest share names
+require "vagrant-windows/monkey_patches/vm"
+
 # Monkey Patch the VM object to support multiple channels, i.e. WinRM
 require "vagrant-windows/monkey_patches/machine"
 
