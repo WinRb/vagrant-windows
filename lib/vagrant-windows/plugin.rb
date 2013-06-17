@@ -6,8 +6,8 @@ end
 
 # This is a sanity check to make sure no one is attempting to install
 # this into an early Vagrant version.
-if Vagrant::VERSION < "1.2.0"
-  raise "The Vagrant Windows plugin is only compatible with Vagrant 1.2+"
+if Vagrant::VERSION < "1.1.0"
+  raise "The Vagrant Windows plugin is only compatible with Vagrant 1.1+"
 end
 
 # Add vagrant-windows plugin errors
@@ -19,8 +19,10 @@ require "vagrant-windows/communication/winrmcommunicator"
 # Monkey patch the vbox42 driver 
 require "vagrant-windows/monkey_patches/vbox_42_driver"
 
-# Monkey Patch the VM config object to support windows guest share names
-require "vagrant-windows/monkey_patches/vm"
+if Vagrant::VERSION >= "1.2.0"
+  # Monkey Patch the VM config object to support windows guest share names in Vagrant 1.2
+  require "vagrant-windows/monkey_patches/vm"
+end
 
 # Monkey Patch the VM object to support multiple channels, i.e. WinRM
 require "vagrant-windows/monkey_patches/machine"
