@@ -1,8 +1,11 @@
 require "#{Vagrant::source_root}/plugins/kernel_v2/config/vm"
+require "vagrant-windows/helper"
 
 module VagrantPlugins
   module Kernel_V2
     class VMConfig < Vagrant.plugin("2", :config)
+      
+      include VagrantWindows::Helper
       
       # Defines a synced folder pair. This pair of folders will be synced
       # to/from the machine. Note that if the machine you're using doesn't
@@ -25,11 +28,11 @@ module VagrantPlugins
         # Key the share by the id. We do this because the id is a valid Windows share name
         # where the full guest path is not.
         # See vagrant issue 1742 https://github.com/mitchellh/vagrant/issues/1742
-        id = options[:id] || options[:guestpath]
+        id = win_friendly_share_id(options)
 
         @__synced_folders[id] = options
       end
-      
+
     end
   end
 end
