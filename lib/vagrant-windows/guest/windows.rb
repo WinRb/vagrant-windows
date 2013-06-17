@@ -1,8 +1,47 @@
 require "vagrant"
+require "vagrant-windows/guest/cap/change_host_name"
+require "vagrant-windows/guest/cap/configure_networks"
+require "vagrant-windows/guest/cap/halt"
+require "vagrant-windows/guest/cap/mount_virtualbox_shared_folder"
 
 module VagrantWindows
   module Guest
     class Windows < Vagrant.plugin("2", :guest)
+      
+      # Vagrant 1.1.x compatibibility methods
+      # Implement the 1.1.x methods and call through to the new 1.2.x capabilities
+      
+      attr_reader :machine
+      
+      def initialize(machine = nil)
+        super(machine) unless machine == nil
+        @machine = machine
+      end
+      
+      def change_host_name(name)
+        VagrantWindows::Guest::Cap::ChangeHostName.change_host_name(@machine, name)
+      end
+      
+      def distro_dispatch
+        :windows
+      end
+      
+      def halt
+        VagrantWindows::Guest::Cap::Halt.halt(@machine)
+      end
+      
+      def mount_shared_folder(name, guestpath, options)
+        VagrantWindows::Guest::Cap::MountVirtualBoxSharedFolder.mount_virtualbox_shared_folder(
+          @machine, name, guestpath, options)
+      end
+      
+      def configure_networks(networks)
+        VagrantWindows::Guest::Cap::ConfigureNetworks.configure_networks(@machine, networks)
+      end
+      
+      
+      # Vagrant 1.2.x compatibibility methods
+      
       def detect?(machine)
         
         # uname -o | grep Solaris

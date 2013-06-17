@@ -63,24 +63,28 @@ module VagrantWindows
       VagrantWindows::Guest::Windows
     end
 
-    guest_capability(:windows, :change_host_name) do
-      require_relative "guest/cap/change_host_name"
-      VagrantWindows::Guest::Cap::ChangeHostName
-    end
+    if Vagrant::VERSION >= "1.2.0"
 
-    guest_capability(:windows, :configure_networks) do
-      require_relative "guest/cap/configure_networks"
-      VagrantWindows::Guest::Cap::ConfigureNetworks
-    end
+      guest_capability(:windows, :change_host_name) do
+        require_relative "guest/cap/change_host_name"
+        VagrantWindows::Guest::Cap::ChangeHostName
+      end
 
-    guest_capability(:windows, :halt) do
-      require_relative "guest/cap/halt"
-      VagrantWindows::Guest::Cap::Halt
-    end
+      guest_capability(:windows, :configure_networks) do
+        require_relative "guest/cap/configure_networks"
+        VagrantWindows::Guest::Cap::ConfigureNetworks
+      end
 
-    guest_capability(:windows, :mount_virtualbox_shared_folder) do
-      require_relative "guest/cap/mount_virtualbox_shared_folder"
-      VagrantWindows::Guest::Cap::MountVirtualBoxSharedFolder
+      guest_capability(:windows, :halt) do
+        require_relative "guest/cap/halt"
+        VagrantWindows::Guest::Cap::Halt
+      end
+
+      guest_capability(:windows, :mount_virtualbox_shared_folder) do
+        require_relative "guest/cap/mount_virtualbox_shared_folder"
+        VagrantWindows::Guest::Cap::MountVirtualBoxSharedFolder
+      end
+    
     end
 
     # This initializes the internationalization strings.
