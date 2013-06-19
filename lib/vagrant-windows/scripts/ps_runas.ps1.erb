@@ -1,56 +1,44 @@
+Set-ExecutionPolicy Unrestricted -force;
+
 function ps-runas ([String] $user, [String] $password, [String] $cmd, [String] $arguments)
 {
-  $secpasswd = ConvertTo-SecureString $password -AsPlainText -Force
-  $process = New-Object System.Diagnostics.Process
-  $setup = $process.StartInfo
-  $setup.FileName = $cmd
-  $setup.Arguments = $arguments
-  $setup.UserName = $user
-  $setup.Password = $secpasswd
-  $setup.Verb = "runas"
-  $setup.UseShellExecute = $false
-  $setup.RedirectStandardError = $true
-  $setup.RedirectStandardOutput = $true
-  $setup.RedirectStandardInput = $false
-  
-  $errEvent = Register-ObjectEvent -InputObj $process `
-    -Event "ErrorDataReceived" `
-    -Action `
-    {
-      param([System.Object] $sender, [System.Diagnostics.DataReceivedEventArgs] $e)
-      if ($e.Data)
-      {
-        Write-Host $e.Data
-      }
-      else
-      {
-        New-Event -SourceIdentifier "LastMsgReceived"
-      }
-    }
-
-  $outEvent = Register-ObjectEvent -InputObj $process `
-    -Event "OutputDataReceived" `
-    -Action `
-    {
-      param([System.Object] $sender, [System.Diagnostics.DataReceivedEventArgs] $e)
-      Write-Host $e.Data
-    }
-  
-  $exitCode = -1
-  if ($process.Start())
-  {
-    $process.BeginOutputReadLine()
-    $process.BeginErrorReadLine()
-  
-    $process.WaitForExit()
-    $exitCode = [int]$process.ExitCode
-    Wait-Event -SourceIdentifier "LastMsgReceived" -Timeout 60 | Out-Null
-  
-    $process.CancelOutputRead()
-    $process.CancelErrorRead()
-    $process.Close()
+  schtasks /query /tn "chef-solo"
+  if (!$?) {
+    schtasks /create /tn "chef-solo" /tr "powershell -file c:\tmp\run_chef.ps1" /sc once /st 12:00 /sd 01/01/2045 /ru $user /rp $password /rl HIGHEST
+    #schtasks /delete /tn "chef-solo" /f
+    #TODO: create task using XML so it'll run if the host is a laptop running on batteries
   }
-  return $exitCode
+  
+  # start the scheduled task right now
+  schtasks /run /tn "chef-solo"
+  
+  # wait for run_chef.ps1 to start
+  Start-Sleep -s 2
+  
+  # read the entire file, but only write out new lines we haven't seen before
+  $numLinesRead = 0
+  $success = $TRUE
+  while (Test-Path c:\tmp\chef-solo.running) {
+    Start-Sleep -m 100
+    
+    $text = (get-content "c:\tmp\chef-solo.log")
+    $numLines = ($text | Measure-Object -line).lines    
+    $numLinesToRead = $numLines - $numLinesRead
+    
+    $text | select -first $numLinesToRead -skip $numLinesRead | ForEach {
+      if ("$_".contains("ERROR: Running exception handlers")) {
+        $success = $FALSE
+      }
+      Write-Host "$_"
+    }
+    $numLinesRead += $numLinesToRead
+  }
+  
+  if ($success) {
+    exit 0
+  }
+  exit -1
+
 }
 
-exit ps-runas "<%= options[:user] %>" "<%= options[:password] %>" "<%= options[:cmd] %>" "<%= options[:arguments] %>"
+ps-runas "<%= options[:user] %>" "<%= options[:password] %>" "<%= options[:cmd] %>" "<%= options[:arguments] %>"

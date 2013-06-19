@@ -2,14 +2,17 @@ module VagrantWindows
   module Guest
     module Cap
       class ConfigureNetworks
+        
         def self.configure_networks(machine, networks)
           driver_mac_address = machine.provider.driver.read_mac_addresses.invert
-
           vm_interface_map = {}
+          logger = Log4r::Logger.new("vagrant_windows::guest::cap::configurenetworks")
 
           # NetConnectionStatus=2 -- connected
-          wql = "SELECT * FROM Win32_NetworkAdapter WHERE NetConnectionStatus=2"
-          machine.communicate.session.wql(wql)[:win32_network_adapter].each do |nic|
+          adapters = machine.communicate.session.wql("SELECT * FROM Win32_NetworkAdapter WHERE NetConnectionStatus=2")
+          logger.debug("adapters: #{adapters.inspect}")
+          
+          adapters.each do |nic|
             naked_mac = nic[:mac_address].gsub(':','')
             if driver_mac_address[naked_mac]
               vm_interface_map[driver_mac_address[naked_mac]] =

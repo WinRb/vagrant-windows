@@ -29,19 +29,13 @@ module VagrantWindows
 
       def ready?
         logger.debug("Checking whether WinRM is ready...")
-        
-        Timeout.timeout(@machine.config.winrm.timeout) do
-          execute("hostname") do |type, data|
-            @logger.debug("hostname: #{data}")
-          end
-        end
-
-        # If we reached this point then we successfully connected
-        logger.debug("WinRM is ready!")
-        true
+        ready = session.ready?
+        @logger.debug("WinRM ready?: #{ready}")
+        ready
       end
       
       def execute(command, opts=nil, &block)
+        exit_status = 0
         opts = {
           :error_check => true,
           :error_class => Errors::WinRMExecutionError,
@@ -54,7 +48,6 @@ module VagrantWindows
         if opts[:shell].eql? :powershell
           command = VagrantWindows.load_script("command_alias.ps1") << "\r\n" << command
         end
-        exit_status = 0
         
         begin
           # Connect via WinRM and execute the command in the shell.
@@ -76,6 +69,9 @@ module VagrantWindows
             :shell => opts[:shell],
             :command => command,
             :message => e.message
+        ensure
+          @session.disconnect
+          @session = nil
         end
 
         # Check for any exit status errors
@@ -106,35 +102,8 @@ module VagrantWindows
       
       def upload(from, to)
         @logger.debug("Uploading: #{from} to #{to}")
-        
-        file = "winrm-upload-#{rand()}"
-        file_name = (session.cmd("echo %TEMP%\\#{file}"))[:data][0][:stdout].chomp
-        session.powershell <<-EOH
-          if(Test-Path #{to})
-          {
-            rm #{to}
-          }
-        EOH
-        Base64.encode64(IO.binread(from)).gsub("\n",'').chars.to_a.each_slice(8000-file_name.size) do |chunk|
-          out = session.cmd( "echo #{chunk.join} >> \"#{file_name}\"" )
-        end
-        execute "mkdir $([System.IO.Path]::GetDirectoryName(\"#{to}\"))"
-        execute <<-EOH
-          $base64_string = Get-Content \"#{file_name}\"
-          $bytes  = [System.Convert]::FromBase64String($base64_string) 
-          $new_file = [System.IO.Path]::GetFullPath(\"#{to}\")
-          [System.IO.File]::WriteAllBytes($new_file,$bytes)
-        EOH
-      end
-
-      def new_session
-        opts = endpoint_options()
-        logger.debug("Creating WinRM session to #{endpoint} with options: #{opts}")
-
-        client = ::WinRM::WinRMWebService.new(endpoint, :plaintext, opts)
-        client.set_timeout(opts[:operation_timeout])
-        client.toggle_nori_type_casting(:off) #we don't want coersion of types
-        client
+        file_manager = WinRM::FileManager.new(session)
+        file_manager.send_file(from, to, :overwrite => true)
       end
 
       def session
@@ -142,15 +111,20 @@ module VagrantWindows
       end
 
       protected
+      
+      def new_session
+        opts = endpoint_options()
+        logger.debug("Creating WinRM session to #{@machine.config.winrm.host} with options: #{opts}")
+        ::WinRM::Client.new(@machine.config.winrm.host, opts)
+      end
 
       def endpoint_options
         {
           :user => @machine.config.winrm.username,
           :pass => @machine.config.winrm.password,
-          :host => @machine.config.winrm.host,
-          :port => winrm_port(),
-          :operation_timeout => @machine.config.winrm.timeout,
-          :basic_auth_only => true
+          :port => winrm_port,
+          :ssl => true,
+          :timeout => 'PT1800S'  #@machine.config.winrm.timeout,
         }.merge ({})
       end
       
@@ -170,37 +144,24 @@ module VagrantWindows
         @machine.config.winrm.port
       end
 
-      def endpoint
-        if !@winrm_endpoint
-          opts = endpoint_options()
-          @winrm_endpoint = "http://#{opts[:host]}:#{opts[:port]}/wsman"
-        end
-        @winrm_endpoint
-      end    
-
       # Executes the command on an SSH connection within a login shell.
       def shell_execute(command, shell=:powershell, &block)
         @logger.debug("#{shell} executing:\n#{command}")
         
         if shell.eql? :cmd
-          output = session.cmd(command) do |out, err|
-            handle_out(:stdout, out, &block)
-            handle_out(:stderr, err, &block)
+          return_code, output_streams = session.cmd(command) do |stream, text|
+            handle_out(stream, text, &block)
           end
         elsif shell.eql? :powershell
-          output = session.powershell(command) do |out, err|
-            handle_out(:stdout, out, &block)
-            handle_out(:stderr, err, &block)
+          return_code, output_streams = session.powershell(command) do |stream, text|
+            handle_out(stream, text, &block)
           end
         else
           raise Errors::WinRMInvalidShell, :shell => shell
         end
 
-        exit_status = output[:exitcode]
-        @logger.debug("Exit status: #{exit_status.inspect}")
-
-        # Return the final exit status
-        return exit_status
+        @logger.debug("Exit status: #{return_code.inspect}")
+        return_code
       end
       
       def handle_out(type, data, &block)

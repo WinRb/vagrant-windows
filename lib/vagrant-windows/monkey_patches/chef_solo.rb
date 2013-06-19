@@ -20,6 +20,9 @@ module VagrantPlugins
           command_solo << "-j #{@config.provisioning_path}/dna.json "
           command_solo << "#{command_args}"
           
+          run_chef_src = VagrantWindows.expand_script_path("run_chef.ps1")
+          @machine.communicate.upload(run_chef_src, "c:/tmp/run_chef.ps1")
+          
           command = VagrantWindows.load_script_template("ps_runas.ps1",
             :options => {
               :user => machine.config.winrm.username, 
