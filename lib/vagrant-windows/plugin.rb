@@ -10,40 +10,26 @@ if Vagrant::VERSION < "1.1.0"
   raise "The Vagrant Windows plugin is only compatible with Vagrant 1.1+"
 end
 
-# Add vagrant-windows plugin errors
-require "vagrant-windows/errors"
-
-# Add Vagrant WinRM communication channel
-require "vagrant-windows/communication/winrmcommunicator"
-
-# Monkey patch the vbox42 driver 
-require "vagrant-windows/monkey_patches/vbox_42_driver"
-
 if Vagrant::VERSION >= "1.2.0"
   # Monkey Patch the VM config object to support windows guest share names in Vagrant 1.2
-  require "vagrant-windows/monkey_patches/vm"
+  require_relative "monkey_patches/vm"
 end
 
+# Monkey patch the vbox42 driver 
+require_relative "monkey_patches/vbox_42_driver"
+
 # Monkey Patch the VM object to support multiple channels, i.e. WinRM
-require "vagrant-windows/monkey_patches/machine"
+require_relative "monkey_patches/machine"
 
 # Monkey patch the Puppet provisioner to support PowerShell/Windows
-require "vagrant-windows/monkey_patches/puppet"
+require_relative "monkey_patches/puppet"
 
 # Monkey patch the Chef-Solo provisioner to support PowerShell/Windows
-require "vagrant-windows/monkey_patches/chef_solo"
+require_relative "monkey_patches/chef_solo"
 
 # Monkey patch the shell provisioner to support PowerShell/batch/exe/Windows/etc
-require "vagrant-windows/monkey_patches/provisioner"
+require_relative "monkey_patches/provisioner"
 
-# Add our windows specific config object
-require "vagrant-windows/config/windows"
-
-# Add our winrm specific config object
-require "vagrant-windows/config/winrm"
-
-# Add the new Vagrant Windows guest
-require "vagrant-windows/guest/windows"
 
 module VagrantWindows
   class Plugin < Vagrant.plugin("2")
@@ -54,17 +40,22 @@ module VagrantWindows
     DESC
 
     config(:windows) do
+      require_relative "config/windows"
       VagrantWindows::Config::Windows
     end
 
     config(:winrm) do
+      require_relative "config/winrm"
       VagrantWindows::Config::WinRM
     end
 
     guest(:windows) do
+      require_relative "guest/windows"
       VagrantWindows::Guest::Windows
     end
 
+    # Vagrant 1.2 introduced the concept of capabilities instead of implementing
+    # an interface on the guest.
     if Vagrant::VERSION >= "1.2.0"
 
       guest_capability(:windows, :change_host_name) do

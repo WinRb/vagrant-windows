@@ -1,3 +1,5 @@
+require_relative '../communication/winrmcommunicator'
+
 module Vagrant
   class Machine
     

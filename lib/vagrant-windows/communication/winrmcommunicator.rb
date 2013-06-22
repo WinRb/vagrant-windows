@@ -5,6 +5,7 @@ require 'vagrant/util/ansi_escape_code_remover'
 require 'vagrant/util/file_mode'
 require 'vagrant/util/platform'
 require 'vagrant/util/retryable'
+require_relative '../errors'
 
 module VagrantWindows
   module Communication
