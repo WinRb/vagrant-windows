@@ -1,30 +1,27 @@
-schtasks /query /tn "chef-solo"
+schtasks /query /tn "chef-solo" | Out-Null
 if ($?) {
   # task already exists, kill it
-  schtasks /delete /tn "chef-solo" /f
+  schtasks /delete /tn "chef-solo" /f | Out-Null
 }
 
-#schedule the task to run once in the far distant future
-schtasks /create /tn "chef-solo" /xml <%= options[:chef_task_xml] %> /ru "<%= options[:user] %>" /rp "<%= options[:pass] %>"
+# schedule the task to run once in the far distant future
+schtasks /create /tn "chef-solo" /xml <%= options[:chef_task_xml] %> /ru "<%= options[:user] %>" /rp "<%= options[:pass] %>" | Out-Null
 
 # start the scheduled task right now
-schtasks /run /tn "chef-solo"
+schtasks /run /tn "chef-solo" | Out-Null
 
 # wait for run_chef.ps1 to start or timeout after 1 minute
-#$maxIterations = 60*100
-#$iterations = 0
-#while (! ((Test-Path <%= options[:chef_task_running] %>) -and ($iterations -lt $maxIterations))) {
-#  Start-Sleep -m 100
-#  $iterations++
-#}
+$timeoutSeconds = 60
+$elapsedSeconds = 0
+while ( (!(Test-Path <%= options[:chef_task_running] %>)) -and ($elapsedSeconds -lt $timeoutSeconds) ) {
+  Start-Sleep -s 1
+  $elapsedSeconds++
+}
 
-#if ($iterations -eq $maxIterations) {
-#  Write-Error "Failed to start chef scheduled task"
-#  exit -2
-#}
-
-# wait for the scheduled task to start
-Start-Sleep 2
+if ($elapsedSeconds -ge $timeoutSeconds) {
+  Write-Error "Timed out waiting for chef scheduled task to start"
+  exit -2
+}
 
 # read the entire file, but only write out new lines we haven't seen before
 $numLinesRead = 0
