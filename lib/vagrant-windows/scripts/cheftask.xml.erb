@@ -39,7 +39,7 @@
   <Actions Context="Author">
     <Exec>
       <Command>powershell</Command>
-      <Arguments>-file <%= options[:run_chef_path] %></Arguments>
+      <Arguments>-file <%= options[:chef_task_run_ps1] %></Arguments>
     </Exec>
   </Actions>
 </Task>

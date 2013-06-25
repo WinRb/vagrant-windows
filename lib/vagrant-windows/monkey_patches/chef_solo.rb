@@ -16,14 +16,19 @@ module VagrantPlugins
         end
         
         def run_chef_solo_on_windows
-          deploy_cheftaskrun_ps1()
-          deploy_cheftask_xml()
-          deploy_cheftask_ps1()
+          # create cheftaskrun.ps1 that the scheduled task will invoke when run
+          render_file_and_upload("cheftaskrun.ps1", chef_script_options[:chef_task_run_ps1], :options => chef_script_options)
+
+          # create cheftask.xml that the scheduled task will be created with
+          render_file_and_upload("cheftask.xml", chef_script_options[:chef_task_xml], :options => chef_script_options)
+
+          # create cheftask.ps1 that will immediately invoke the scheduled task and wait for completion
+          render_file_and_upload("cheftask.ps1", chef_script_options[:chef_task_ps1], :options => chef_script_options)
           
           command = <<-EOH
           $old = Get-ExecutionPolicy;
           Set-ExecutionPolicy Unrestricted -force;
-          #{remote_cheftask_ps1_path()};
+          #{chef_script_options[:chef_task_ps1]};
           Set-ExecutionPolicy $old -force
           EOH
 
@@ -51,41 +56,6 @@ module VagrantPlugins
           raise ChefError, :no_convergence
         end
         
-        def deploy_cheftaskrun_ps1
-          # create cheftaskrun.ps1 that the scheduled task will invoke when run    
-          command_env = @config.binary_env ? "#{@config.binary_env} " : ""
-          command_args = @config.arguments ? " #{@config.arguments}" : ""
-          chef_solo_path = win_friendly_path(File.join(@config.provisioning_path, 'solo.rb'))
-          chef_dna_path = win_friendly_path(File.join(@config.provisioning_path, 'dna.json'))
-          
-          chef_arguments = "-c #{chef_solo_path} "
-          chef_arguments << "-j #{chef_dna_path} "
-          chef_arguments << "#{command_args}"
-          
-          render_file_and_upload("cheftaskrun.ps1", remote_cheftaskrun_ps1_path(), :options => {
-            :chef_task_running => remote_chef_task_running_path(), 
-            :chef_stdout_log => remote_chef_stdout_log_path(),
-            :chef_stderr_log => win_friendly_path("#{@config.provisioning_path}/chef-solo.err.log"),
-            :chef_binary_path => win_friendly_path("#{command_env}#{chef_binary_path("chef-solo")}"),
-            :chef_arguments => chef_arguments })
-        end
-        
-        def deploy_cheftask_xml
-          # create cheftask.xml that the scheduled task will be created with
-          render_file_and_upload("cheftask.xml", remote_cheftask_xml_path(), :options => {
-            :run_chef_path => remote_cheftaskrun_ps1_path() })
-        end
-        
-        def deploy_cheftask_ps1
-          # create cheftask.ps1 that will immediately invoke the scheduled task and wait for completion
-          render_file_and_upload("cheftask.ps1", remote_cheftask_ps1_path(), :options => {
-            :chef_task_xml => remote_cheftask_xml_path(),
-            :user => @machine.config.winrm.username,
-            :pass => @machine.config.winrm.password,
-            :chef_task_running => remote_chef_task_running_path(),
-            :chef_stdout_log => remote_chef_stdout_log_path() })
-        end
-        
         def render_file_and_upload(script_name, dest_file, options)
           script_contents = VagrantWindows.load_script_template(script_name, options)
 
@@ -97,25 +67,32 @@ module VagrantPlugins
           @machine.communicate.upload(script_local, dest_file)
         end
         
-        def remote_cheftaskrun_ps1_path
-          win_friendly_path("#{@config.provisioning_path}/cheftaskrun.ps1")
-        end
-        
-        def remote_cheftask_xml_path
-          win_friendly_path("#{@config.provisioning_path}/cheftask.xml")
-        end
-        
-        def remote_cheftask_ps1_path
-          win_friendly_path("#{@config.provisioning_path}/cheftask.ps1")
-        end
-        
-        def remote_chef_task_running_path
-          win_friendly_path("#{@config.provisioning_path}/cheftask.running")
-        end
-        
-        def remote_chef_stdout_log_path
-          win_friendly_path("#{@config.provisioning_path}/chef-solo.log")
-        end
+        def chef_script_options
+          if @chef_script_options.nil?
+            command_env = @config.binary_env ? "#{@config.binary_env} " : ""
+            command_args = @config.arguments ? " #{@config.arguments}" : ""
+            chef_solo_path = win_friendly_path(File.join(@config.provisioning_path, 'solo.rb'))
+            chef_dna_path = win_friendly_path(File.join(@config.provisioning_path, 'dna.json'))
+          
+            chef_arguments = "-c #{chef_solo_path} "
+            chef_arguments << "-j #{chef_dna_path} "
+            chef_arguments << "#{command_args}"
+          
+            @chef_script_options = {
+              :user => @machine.config.winrm.username,
+              :pass => @machine.config.winrm.password,
+              :chef_arguments => chef_arguments,
+              :chef_task_xml => win_friendly_path("#{@config.provisioning_path}/cheftask.xml"),
+              :chef_task_running => win_friendly_path("#{@config.provisioning_path}/cheftask.running"),
+              :chef_task_ps1 => win_friendly_path("#{@config.provisioning_path}/cheftask.ps1"),
+              :chef_task_run_ps1 => win_friendly_path("#{@config.provisioning_path}/cheftaskrun.ps1"),
+              :chef_stdout_log => win_friendly_path("#{@config.provisioning_path}/chef-solo.log"),
+              :chef_stderr_log => win_friendly_path("#{@config.provisioning_path}/chef-solo.err.log"),
+              :chef_binary_path => win_friendly_path("#{command_env}#{chef_binary_path("chef-solo")}")
+            }
+          end
+          @chef_script_options
+        end        
         
         def is_windows
           @machine.config.vm.guest.eql? :windows
