@@ -1,27 +1,30 @@
-# :chef_task_running = c:\tmp\cheftask.running
-# :chef_task_log = c:\tmp\cheftask.log
-# :chef_task_xml = c:\tmp\cheftask.xml
-
-schtasks /query /tn $taskName
-if (!$?) {
-  schtasks /create /tn "chef-solo" /xml <%= options[:chef_task_xml] %> /ru "<%= options[:user] %>" /rp "<%= options[:pass] %>" /rl HIGHEST
+schtasks /query /tn "chef-solo"
+if ($?) {
+  # task already exists, kill it
+  schtasks /delete /tn "chef-solo" /f
 }
+
+#schedule the task to run once in the far distant future
+schtasks /create /tn "chef-solo" /xml <%= options[:chef_task_xml] %> /ru "<%= options[:user] %>" /rp "<%= options[:pass] %>"
 
 # start the scheduled task right now
 schtasks /run /tn "chef-solo"
 
 # wait for run_chef.ps1 to start or timeout after 1 minute
-$maxIterations = 60*100
-$iterations = 0
-while (!Test-Path <%= options[:chef_task_running] %> -and $iterations < $maxIterations) {
-  Start-Sleep -m 100
-  $iterations++
-}
+#$maxIterations = 60*100
+#$iterations = 0
+#while (! ((Test-Path <%= options[:chef_task_running] %>) -and ($iterations -lt $maxIterations))) {
+#  Start-Sleep -m 100
+#  $iterations++
+#}
 
-if ($iterations >= $maxIterations) {
-  Write-Error "Failed to start chef scheduled task"
-  exit -2
-}
+#if ($iterations -eq $maxIterations) {
+#  Write-Error "Failed to start chef scheduled task"
+#  exit -2
+#}
+
+# wait for the scheduled task to start
+Start-Sleep 2
 
 # read the entire file, but only write out new lines we haven't seen before
 $numLinesRead = 0
@@ -40,4 +43,5 @@ while (Test-Path <%= options[:chef_task_running] %>) {
   $numLinesRead += $numLinesToRead
 }
 
-exit (switch($success) { $TRUE { 0 } default { 1 }})
+$exitCode = switch($success) { $TRUE { 0 } default { 1 }}
+exit $exitCode

@@ -19,6 +19,13 @@ module VagrantPlugins
           deploy_cheftaskrun_ps1()
           deploy_cheftask_xml()
           deploy_cheftask_ps1()
+          
+          command = <<-EOH
+          $old = Get-ExecutionPolicy;
+          Set-ExecutionPolicy Unrestricted -force;
+          #{remote_cheftask_ps1_path()};
+          Set-ExecutionPolicy $old -force
+          EOH
 
           @config.attempts.times do |attempt|
             if attempt == 0
@@ -27,7 +34,7 @@ module VagrantPlugins
               @machine.env.ui.info I18n.t("vagrant.provisioners.chef.running_solo_again")
             end
 
-            exit_status = @machine.communicate.sudo(remote_cheftask_ps1_path(), :error_check => false) do |type, data|
+            exit_status = @machine.communicate.sudo(command, :error_check => false) do |type, data|
               # Output the data with the proper color based on the stream.
               color = type == :stdout ? :green : :red
 
@@ -45,9 +52,14 @@ module VagrantPlugins
         end
         
         def deploy_cheftaskrun_ps1
-          # create cheftaskrun.ps1 that the scheduled task will invoke when run          
-          chef_arguments = "-c #{@config.provisioning_path}/solo.rb "
-          chef_arguments << "-j #{@config.provisioning_path}/dna.json "
+          # create cheftaskrun.ps1 that the scheduled task will invoke when run    
+          command_env = @config.binary_env ? "#{@config.binary_env} " : ""
+          command_args = @config.arguments ? " #{@config.arguments}" : ""
+          chef_solo_path = win_friendly_path(File.join(@config.provisioning_path, 'solo.rb'))
+          chef_dna_path = win_friendly_path(File.join(@config.provisioning_path, 'dna.json'))
+          
+          chef_arguments = "-c #{chef_solo_path} "
+          chef_arguments << "-j #{chef_dna_path} "
           chef_arguments << "#{command_args}"
           
           render_file_and_upload("cheftaskrun.ps1", remote_cheftaskrun_ps1_path(), :options => {
@@ -60,13 +72,13 @@ module VagrantPlugins
         
         def deploy_cheftask_xml
           # create cheftask.xml that the scheduled task will be created with
-          render_file_and_upload("cheftask.xml", remote_cheftask_xml_path() :options => {
+          render_file_and_upload("cheftask.xml", remote_cheftask_xml_path(), :options => {
             :run_chef_path => remote_cheftaskrun_ps1_path() })
         end
         
         def deploy_cheftask_ps1
           # create cheftask.ps1 that will immediately invoke the scheduled task and wait for completion
-          render_file_and_upload("cheftask.ps1", remote_cheftask_ps1_path() :options => {
+          render_file_and_upload("cheftask.ps1", remote_cheftask_ps1_path(), :options => {
             :chef_task_xml => remote_cheftask_xml_path(),
             :user => @machine.config.winrm.username,
             :pass => @machine.config.winrm.password,
@@ -79,22 +91,22 @@ module VagrantPlugins
 
           # render cheftaskrun.ps1 to local temp file
           script_local = Tempfile.new(script_name)
-          IO.write(script_contents, script_local)
+          IO.write(script_local, script_contents)
           
           # upload cheftaskrun.ps1 file
           @machine.communicate.upload(script_local, dest_file)
         end
         
         def remote_cheftaskrun_ps1_path
-          win_friendly_path("#{@config.provisioning_path}/cheftaskrun.ps1"))
+          win_friendly_path("#{@config.provisioning_path}/cheftaskrun.ps1")
         end
         
         def remote_cheftask_xml_path
-          win_friendly_path("#{@config.provisioning_path}/cheftask.xml"))
+          win_friendly_path("#{@config.provisioning_path}/cheftask.xml")
         end
         
         def remote_cheftask_ps1_path
-          win_friendly_path("#{@config.provisioning_path}/cheftask.ps1"))
+          win_friendly_path("#{@config.provisioning_path}/cheftask.ps1")
         end
         
         def remote_chef_task_running_path
