@@ -5,7 +5,7 @@ if ($?) {
 }
 
 # schedule the task to run once in the far distant future
-schtasks /create /tn "chef-solo" /xml <%= options[:chef_task_xml] %> /ru "<%= options[:user] %>" /rp "<%= options[:pass] %>" | Out-Null
+schtasks /create /tn "chef-solo" /xml "<%= options[:chef_task_xml] %>" /ru "<%= options[:user] %>" /rp "<%= options[:pass] %>" | Out-Null
 
 # start the scheduled task right now
 schtasks /run /tn "chef-solo" | Out-Null
@@ -13,7 +13,7 @@ schtasks /run /tn "chef-solo" | Out-Null
 # wait for run_chef.ps1 to start or timeout after 1 minute
 $timeoutSeconds = 60
 $elapsedSeconds = 0
-while ( (!(Test-Path <%= options[:chef_task_running] %>)) -and ($elapsedSeconds -lt $timeoutSeconds) ) {
+while ( (!(Test-Path "<%= options[:chef_task_running] %>")) -and ($elapsedSeconds -lt $timeoutSeconds) ) {
   Start-Sleep -s 1
   $elapsedSeconds++
 }
@@ -26,7 +26,7 @@ if ($elapsedSeconds -ge $timeoutSeconds) {
 # read the entire file, but only write out new lines we haven't seen before
 $numLinesRead = 0
 $success = $TRUE
-while (Test-Path <%= options[:chef_task_running] %>) {
+while (Test-Path "<%= options[:chef_task_running] %>") {
   Start-Sleep -m 100
   
   $text = (get-content "<%= options[:chef_stdout_log] %>")

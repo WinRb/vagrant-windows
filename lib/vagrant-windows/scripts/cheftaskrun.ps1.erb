@@ -3,8 +3,8 @@ Set-ExecutionPolicy Unrestricted -force;
 
 Try
 {
-  "running" | Out-File <%= options[:chef_task_running] %>
-  Start-Process <%= options[:chef_binary_path] %> -ArgumentList "<%= options[:chef_arguments] %>" -NoNewWindow -Wait -RedirectStandardOutput <%= options[:chef_stdout_log] %> -RedirectStandardError <%= options[:chef_stderr_log] %>
+  "running" | Out-File "<%= options[:chef_task_running] %>"
+  Start-Process "<%= options[:chef_binary_path] %>" -ArgumentList "<%= options[:chef_arguments] %>" -NoNewWindow -Wait -RedirectStandardOutput "<%= options[:chef_stdout_log] %>" -RedirectStandardError "<%= options[:chef_stderr_log] %>"
 }
 Catch [system.exception]
 {
@@ -12,7 +12,7 @@ Catch [system.exception]
 }
 Finally
 {
-  del <%= options[:chef_task_running] %>
+  del "<%= options[:chef_task_running] %>"
 }
 
 exit $exitCode
