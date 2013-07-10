@@ -2,7 +2,7 @@ Installing Vagrant-Windows
 ==========================
 
 - Vagrant 1.0 should use <code>gem "vagrant-windows", "~> 0.1.2"</code>
-- Vagrant 1.1+ should use <code>gem "vagrant-windows", "~> 1.1.0"</code>
+- Vagrant 1.1+ should use <code>gem "vagrant-windows", "~> 1.2.0"</code>
 
 Supported Guest Operating Systems (Your VM)
 ===========================================
@@ -202,6 +202,6 @@ Changelog
 - Can now run the vagrant-windows plugin via bundle exec instead of vagrant plugin install (for plugin dev).The vagrant src root finding logic didn't work from a bundle, but the native Vagrant src root does.
 - Readme fixes/updates.
 
-1.1.0
+1.2.0
 
 - Converted to Vagrant 1.2.x plugin architecture.
