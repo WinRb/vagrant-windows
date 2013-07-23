@@ -1,5 +1,6 @@
 module VagrantWindows
   module Helper
+    extend self
     
     def win_friendly_path(path)
       if path
@@ -8,16 +9,10 @@ module VagrantWindows
       end
       new_path
     end
-    
-    # Creates a Windows friendly share name to be used by the
-    # vagrant vm config monkey patch
-    def win_friendly_share_id(options)
-      id = options[:id] || options[:guestpath]
-      if id =~ /\//
-        parts = id.split(/\//)
-        id = parts[parts.length - 1]
-      end
-      id
+
+    # turns '/vagrant' into 'vagrant' or turns ''/a/b/c/d/e' into 'a_b_c_d_e'
+    def win_friendly_share_id(shared_folder_name)
+      return shared_folder_name.gsub(/[\/\/]/,'_').sub(/^_/, '')
     end
     
   end
