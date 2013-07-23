@@ -1,5 +1,4 @@
 require "#{Vagrant::source_root}/plugins/provisioners/shell/provisioner"
-require "vagrant-windows/helper"
 
 module VagrantPlugins
   module Shell
