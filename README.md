@@ -22,7 +22,24 @@ Building a Base Box
 
 All Windows Machines
 -------------------- 
-  -Enable WinRM
+#### Prerequisites
+
+Box setup:
+
+  - Create a vagrant user, for things to work out of the box username and password should both be "vagrant".
+  - Turn off UAC (Msconfig)
+  - Disable complex passwords
+
+Prior to enabling WinRM, you must ensure the following services are enabled:
+
+  - Base Filtering Engine
+    - Remote Procedure Call (RPC)
+      - DCOM Server Process Launcher
+      - RPC Endpoint Mapper
+  - Windows Firewall
+  - Windows Remote Management (WS-Management)
+
+#### Enable WinRM
 ```
    winrm quickconfig -q
    winrm set winrm/config/winrs @{MaxMemoryPerShellMB="512"}
@@ -30,10 +47,11 @@ All Windows Machines
    winrm set winrm/config/service @{AllowUnencrypted="true"}
    winrm set winrm/config/service/auth @{Basic="true"}
 ```
-  - Create a vagrant user, for things to work out of the box username and password should both be "vagrant".
-  - Turn off UAC (Msconfig)
-  - Disable complex passwords
+
+#### Last steps 
+
   - Optional: Start WinRM a few minutes faster by running: "sc config WinRM start= auto" (default is delayed-auto)
+    - _Note:_ When you use the `winrm` command line tool it will always ask to set the startup to Delayed, so you may find yourself performing this a few times.
   
 Servers
 --------
