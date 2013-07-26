@@ -59,7 +59,7 @@ module VagrantWindows
         
         begin
           # Connect via WinRM and execute the command in the shell.
-          exceptions = [HTTPClient::KeepAliveDisconnected] 
+          exceptions = [HTTPClient::KeepAliveDisconnected, Errno::ECONNREFUSED]
           exit_status = retryable(:tries => @machine.config.winrm.max_tries, :on => exceptions, :sleep => 10) do
             shell_execute(command, opts[:shell], &block)
           end
@@ -163,11 +163,13 @@ module VagrantWindows
         expected_guest_port = @machine.config.winrm.guest_port
         @logger.debug("Searching for WinRM port: #{expected_guest_port.inspect}")
       
-        # Look for the forwarded port only by comparing the guest port
-        @machine.provider.driver.read_forwarded_ports.each do |_, _, hostport, guestport|
-          return hostport if guestport == expected_guest_port
+        # Look for the forwarded port only by comparing the guest port. VMware providers do not currently provide read_forwarded_ports
+        if (@machine.provider.driver.name.casecmp("vmware_fusion") != 0) && (@machine.provider.driver.name.casecmp("vmware_workstation") != 0)
+          @machine.provider.driver.read_forwarded_ports.each do |_, _, hostport, guestport|
+            return hostport if guestport == expected_guest_port
+          end
         end
-        
+
         @machine.config.winrm.port
       end
 
