@@ -10,9 +10,11 @@ if Vagrant::VERSION < "1.1.0"
   raise "The Vagrant Windows plugin is only compatible with Vagrant 1.1+"
 end
 
+require_relative 'helper'
+
 if Vagrant::VERSION >= "1.2.0"
-  # Monkey Patch the VM config object to support windows guest share names in Vagrant 1.2
-  require_relative "monkey_patches/vm"
+  # Monkey Patch the virtualbox share_folders action to make valid share names on windows
+  require_relative "monkey_patches/plugins/providers/virtualbox/action/share_folders"
 end
 
 # Monkey patch the vbox42 driver 
