@@ -26,29 +26,13 @@ describe VagrantWindows::Helper do
   
   describe "win_friendly_share_id" do
     it "should use share id if present" do
-      options = {}
-      options[:id] = 'sharename'
-      @dummy.win_friendly_share_id(options).should eq('sharename')
-    end
-    
-    it "should use guest_path if share id missing" do
-      options = {}
-      options[:guestpath] = 'guestpath'
-      @dummy.win_friendly_share_id(options).should eq('guestpath')
-
+      @dummy.win_friendly_share_id('sharename').should eq('sharename')
     end
     
     it "should use last folder name in guest_path" do
-      options = {}
-      options[:guestpath] = '/tmp/folder/sharename'
-      @dummy.win_friendly_share_id(options).should eq('sharename')
+      @dummy.win_friendly_share_id('/tmp/folder/sharename').should eq('tmp_folder_sharename')
     end
-    
-    it "should use last folder name in guest_path with trailing slash" do
-      options = {}
-      options[:guestpath] = '/tmp/folder/sharename/'
-      @dummy.win_friendly_share_id(options).should eq('sharename')
-    end
+
   end
 
 end
