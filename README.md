@@ -57,8 +57,8 @@ Prior to enabling WinRM, you must ensure the following services are enabled:
     - _Note:_ When you use the `winrm` command line tool it will always ask to set the startup to Delayed, so you may find yourself performing this a few times.
 
   
-Servers
---------
+Non-Windows Core 2008/2012 Servers
+----------------------------------
   - [Disable Shutdown Tracker](http://www.jppinto.com/2010/01/how-to-disable-the-shutdown-event-tracker-in-server-20032008/)
   - [Disable "Server Manager" Starting at login](http://www.elmajdal.net/win2k8/How_to_Turn_Off_The_Automatic_Display_of_Server_Manager_At_logon.aspx)
   
