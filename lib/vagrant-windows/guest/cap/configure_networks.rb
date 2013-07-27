@@ -54,7 +54,9 @@ module VagrantWindows
             end
           end
 
-          set_networks_to_work(machine)
+          if machine.config.windows.set_work_network
+            set_networks_to_work(machine)
+          end
         end
       end
     end
