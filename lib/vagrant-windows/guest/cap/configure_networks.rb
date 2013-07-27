@@ -16,6 +16,11 @@ module VagrantWindows
           return has_dhcp_enabled
         end
 
+        def self.set_networks_to_work(machine)
+          command = VagrantWindows.load_script("set_work_network.ps1")
+          machine.communicate.execute(command)
+        end
+
         def self.configure_networks(machine, networks)
           driver_mac_address = machine.provider.driver.read_mac_addresses.invert
 
@@ -49,7 +54,9 @@ module VagrantWindows
             end
           end
 
-          #netsh interface ip set address name="Local Area Connection" static 192.168.0.100 255.255.255.0 192.168.0.1 1
+          if machine.config.windows.set_work_network
+            set_networks_to_work(machine)
+          end
         end
       end
     end
