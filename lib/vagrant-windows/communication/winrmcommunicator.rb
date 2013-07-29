@@ -33,13 +33,18 @@ module VagrantWindows
         
         Timeout.timeout(@machine.config.winrm.timeout) do
           execute("hostname") do |type, data|
-            @logger.debug("hostname: #{data}")
+            @logger.info("hostname: #{data}")
           end
         end
 
         # If we reached this point then we successfully connected
-        logger.debug("WinRM is ready!")
+        logger.info("WinRM is ready!")
         true
+        rescue Vagrant::Errors::VagrantError => e
+        # We catch a `VagrantError` which would signal that something went
+        # wrong expectedly in the `connect`, which means we didn't connect.
+        @logger.info("WinRM not up: #{e.inspect}")
+        return false
       end
       
       def execute(command, opts=nil, &block)
@@ -148,15 +153,28 @@ module VagrantWindows
         {
           :user => @machine.config.winrm.username,
           :pass => @machine.config.winrm.password,
-          :host => @machine.config.winrm.host,
+          :host => winrm_host(),
           :port => winrm_port(),
           :operation_timeout => @machine.config.winrm.timeout,
           :basic_auth_only => true
         }.merge ({})
       end
+
+      def winrm_host
+        @winrm_host ||= find_winrm_host()
+      end
       
       def winrm_port
         @winrm_port ||= find_winrm_host_port()
+      end
+
+      def find_winrm_host
+        # Get the SSH info for the machine, raise an exception if the
+        # provider is saying that SSH is not ready.
+        ssh_info = @machine.ssh_info
+        raise Vagrant::Errors::SSHNotReady if ssh_info.nil?
+        @logger.info("Host: #{ssh_info[:host]}")
+        return ssh_info[:host]
       end
       
       def find_winrm_host_port
@@ -164,7 +182,7 @@ module VagrantWindows
         @logger.debug("Searching for WinRM port: #{expected_guest_port.inspect}")
       
         # Look for the forwarded port only by comparing the guest port. VMware providers do not currently provide read_forwarded_ports
-        if (@machine.provider.driver.name.casecmp("vmware_fusion") != 0) && (@machine.provider.driver.name.casecmp("vmware_workstation") != 0)
+        if (@machine.provider_name != :vmware_fusion) && (@machine.provider_name != :vmware_workstation)
           @machine.provider.driver.read_forwarded_ports.each do |_, _, hostport, guestport|
             return hostport if guestport == expected_guest_port
           end
