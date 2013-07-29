@@ -57,8 +57,8 @@ Prior to enabling WinRM, you must ensure the following services are enabled:
     - _Note:_ When you use the `winrm` command line tool it will always ask to set the startup to Delayed, so you may find yourself performing this a few times.
 
   
-Non-Windows Core 2008/2012 Servers
-----------------------------------
+Windows 2008/2012 Servers (except Core)
+---------------------------------------
   - [Disable Shutdown Tracker](http://www.jppinto.com/2010/01/how-to-disable-the-shutdown-event-tracker-in-server-20032008/)
   - [Disable "Server Manager" Starting at login](http://www.elmajdal.net/win2k8/How_to_Turn_Off_The_Automatic_Display_of_Server_Manager_At_logon.aspx)
   
@@ -69,7 +69,7 @@ Add the following to your Vagrantfile
 
 ```ruby
 config.vm.guest = :windows
-config.windows.halt_timeout = 15
+config.windows.halt_timeout = 25
 config.winrm.username = "vagrant"
 config.winrm.password = "vagrant"
 config.vm.network :forwarded_port, guest: 5985, host: 5985
@@ -80,7 +80,7 @@ Example:
 Vagrant.configure("2") do |config|
   
   # Max time to wait for the guest to shutdown
-  config.windows.halt_timeout = 15
+  config.windows.halt_timeout = 25
   
   # Admin user name and password
   config.winrm.username = "vagrant"
@@ -102,12 +102,13 @@ Available Config Parameters:
 
 * ```config.windows.halt_timeout``` - How long Vagrant should wait for the guest to shutdown before forcing exit, defaults to 30 seconds
 * ```config.windows.halt_check_interval``` - How often Vagrant should check if the system has shutdown, defaults to 1 second
+* ```config.windows.set_work_network``` - Force network adapters to "Work Network". Useful for Win7 guests using private networking.
 * ```config.winrm.username``` - The Windows guest admin user name, defaults to vagrant.
 * ```config.winrm.password``` - The above's password, defaults to vagrant.
 * ```config.winrm.host``` - The IP of the guest, but because we use NAT with port forwarding this defaults to localhost.
 * ```config.winrm.guest_port``` - The guest's WinRM port, defaults to 5985.
 * ```config.winrm.port``` - The WinRM port on the host, defaults to 5985. You might need to change this if your hosts is also Windows.
-* ```config.winrm.max_tries``` - The number of retries to connect to WinRM, defaults to 12.
+* ```config.winrm.max_tries``` - The number of retries to connect to WinRM, defaults to 20.
 * ```config.winrm.timeout``` - The max number of seconds to wait for a WinRM response, defaults to 1800 seconds.
 
 Note - You need to ensure you specify a config.windows and a config.winrm in your Vagrantfile. Currently there's a problem where

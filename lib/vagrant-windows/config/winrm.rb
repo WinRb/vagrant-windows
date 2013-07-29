@@ -42,7 +42,7 @@ module VagrantWindows
         @host = "localhost"   if @host == UNSET_VALUE
         @port = 5985          if @port == UNSET_VALUE
         @guest_port = 5985    if @guest_port == UNSET_VALUE
-        @max_tries = 12       if @max_tries == UNSET_VALUE
+        @max_tries = 20       if @max_tries == UNSET_VALUE
         @timeout = 1800       if @timeout == UNSET_VALUE
       end
 
