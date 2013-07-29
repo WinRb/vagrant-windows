@@ -1,9 +1,13 @@
 require "#{Vagrant::source_root}/plugins/provisioners/chef/provisioner/chef_solo"
+require 'tempfile'
+require_relative '../helper'
 
 module VagrantPlugins
   module Chef
     module Provisioner
       class ChefSolo < Base
+        
+        include VagrantWindows::Helper
 
         run_chef_solo_on_linux = instance_method(:run_chef_solo)
 
@@ -13,19 +17,21 @@ module VagrantPlugins
         end
         
         def run_chef_solo_on_windows
-          command_env = @config.binary_env ? "#{@config.binary_env} " : ""
-          command_args = @config.arguments ? " #{@config.arguments}" : ""
-          command_solo = "#{command_env}#{chef_binary_path("chef-solo")} "
-          command_solo << "-c #{@config.provisioning_path}/solo.rb "
-          command_solo << "-j #{@config.provisioning_path}/dna.json "
-          command_solo << "#{command_args}"
+          # create cheftaskrun.ps1 that the scheduled task will invoke when run
+          render_file_and_upload("cheftaskrun.ps1", chef_script_options[:chef_task_run_ps1], :options => chef_script_options)
+
+          # create cheftask.xml that the scheduled task will be created with
+          render_file_and_upload("cheftask.xml", chef_script_options[:chef_task_xml], :options => chef_script_options)
+
+          # create cheftask.ps1 that will immediately invoke the scheduled task and wait for completion
+          render_file_and_upload("cheftask.ps1", chef_script_options[:chef_task_ps1], :options => chef_script_options)
           
-          command = VagrantWindows.load_script_template("ps_runas.ps1",
-            :options => {
-              :user => machine.config.winrm.username, 
-              :password => @machine.config.winrm.password,
-              :cmd => "powershell.exe",
-              :arguments => "-Command #{command_solo}"})
+          command = <<-EOH
+          $old = Get-ExecutionPolicy;
+          Set-ExecutionPolicy Unrestricted -force;
+          #{chef_script_options[:chef_task_ps1]};
+          Set-ExecutionPolicy $old -force
+          EOH
 
           @config.attempts.times do |attempt|
             if attempt == 0
@@ -50,6 +56,44 @@ module VagrantPlugins
           # If we reached this point then Chef never converged! Error.
           raise ChefError, :no_convergence
         end
+        
+        def render_file_and_upload(script_name, dest_file, options)
+          script_contents = VagrantWindows.load_script_template(script_name, options)
+
+          # render cheftaskrun.ps1 to local temp file
+          script_local = Tempfile.new(script_name)
+          IO.write(script_local, script_contents)
+          
+          # upload cheftaskrun.ps1 file
+          @machine.communicate.upload(script_local, dest_file)
+        end
+        
+        def chef_script_options
+          if @chef_script_options.nil?
+            command_env = @config.binary_env ? "#{@config.binary_env} " : ""
+            command_args = @config.arguments ? " #{@config.arguments}" : ""
+            chef_solo_path = win_friendly_path(File.join(@config.provisioning_path, 'solo.rb'))
+            chef_dna_path = win_friendly_path(File.join(@config.provisioning_path, 'dna.json'))
+          
+            chef_arguments = "-c #{chef_solo_path} "
+            chef_arguments << "-j #{chef_dna_path} "
+            chef_arguments << "#{command_args}"
+          
+            @chef_script_options = {
+              :user => @machine.config.winrm.username,
+              :pass => @machine.config.winrm.password,
+              :chef_arguments => chef_arguments,
+              :chef_task_xml => win_friendly_path("#{@config.provisioning_path}/cheftask.xml"),
+              :chef_task_running => win_friendly_path("#{@config.provisioning_path}/cheftask.running"),
+              :chef_task_ps1 => win_friendly_path("#{@config.provisioning_path}/cheftask.ps1"),
+              :chef_task_run_ps1 => win_friendly_path("#{@config.provisioning_path}/cheftaskrun.ps1"),
+              :chef_stdout_log => win_friendly_path("#{@config.provisioning_path}/chef-solo.log"),
+              :chef_stderr_log => win_friendly_path("#{@config.provisioning_path}/chef-solo.err.log"),
+              :chef_binary_path => win_friendly_path("#{command_env}#{chef_binary_path("chef-solo")}")
+            }
+          end
+          @chef_script_options
+        end        
         
         def is_windows
           @machine.config.vm.guest.eql? :windows
