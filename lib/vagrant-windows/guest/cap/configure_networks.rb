@@ -16,6 +16,8 @@ module VagrantWindows
           return has_dhcp_enabled
         end
 
+        # Useful to allow guest access from the host via a private IP on Win7
+        # https://github.com/WinRb/vagrant-windows/issues/63
         def self.set_networks_to_work(machine)
           command = VagrantWindows.load_script("set_work_network.ps1")
           machine.communicate.execute(command)
@@ -31,8 +33,11 @@ module VagrantWindows
           machine.communicate.session.wql(wql)[:win32_network_adapter].each do |nic|
             naked_mac = nic[:mac_address].gsub(':','')
             if driver_mac_address[naked_mac]
-              vm_interface_map[driver_mac_address[naked_mac]] =
-                { :name => nic[:net_connection_id], :mac_address => naked_mac, :interface_index => nic[:interface_index], :index => nic[:index] }
+              vm_interface_map[driver_mac_address[naked_mac]] = {
+                :name => nic[:net_connection_id],
+                :mac_address => naked_mac,
+                :interface_index => nic[:interface_index],
+                :index => nic[:index] }
             end
           end
         
@@ -54,10 +59,10 @@ module VagrantWindows
             end
           end
 
-          if machine.config.windows.set_work_network
-            set_networks_to_work(machine)
-          end
-        end
+          set_networks_to_work(machine) if machine.config.windows.set_work_network
+          
+        end # configure_networks
+        
       end
     end
   end
