@@ -197,7 +197,13 @@ References and Shout Outs
 - Chris McClimans - Vagrant Branch (https://github.com/hh/vagrant/blob/feature/winrm/)
 - Dan Wanek - WinRM GEM (https://github.com/zenchild/WinRM)
   - +1 For being super responsive to pull requests.
-
+- Mike Griffen - Added first vagrant-windows unit tests and updated readme
+- Geronimo Orozco - Shell provisioner support
+- David Cournapeau - Added config.windows.set_work_network option
+- keiths-osc - Fixed Vagrant 1.2 shared folder action
+- Rob Reynolds - Updated readme installation and box configuration notes
+- stonith - Updated readme winrm config notes
+- wenns - Updated readme to advise against forwarding RDP
 
 Changelog
 =========
@@ -231,3 +237,5 @@ Changelog
 1.2.0
 
 - Converted to Vagrant 1.2.x plugin architecture.
+- Various networking fixes.
+- Chef provisioner runs through the Windows task scheduler instead of ps_runas power shell script.
