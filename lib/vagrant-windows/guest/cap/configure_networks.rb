@@ -10,7 +10,10 @@ module VagrantWindows
         
         def self.configure_networks(machine, networks)
           @@logger.debug("networks: #{networks.inspect}")
-          vm_interface_map = create_vm_interface_map(machine)
+          if (machine.provider_name != :vmware_fusion) && (machine.provider_name != :vmware_workstation)
+            vm_interface_map = create_vm_interface_map(machine)
+          end
+
           networks.each do |network|
             interface = vm_interface_map[network[:interface]+1]
             if interface.nil?
