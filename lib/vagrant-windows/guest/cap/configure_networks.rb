@@ -53,9 +53,11 @@ module VagrantWindows
           driver_mac_address = machine.provider.driver.read_mac_addresses.invert
           @@logger.debug("mac addresses: #{driver_mac_address.inspect}")
           
-          # NetConnectionStatus=2 -- connected
-          wql = "SELECT * FROM Win32_NetworkAdapter WHERE NetConnectionStatus=2"
+          # Get all NICs that have a MAC address
+          # http://msdn.microsoft.com/en-us/library/windows/desktop/aa394216(v=vs.85).aspx
+          wql = "SELECT * FROM Win32_NetworkAdapter WHERE MACAddress IS NOT NULL"
           machine.communicate.session.wql(wql)[:win32_network_adapter].each do |nic|
+            @@logger.debug("nic: #{nic.inspect}")
             naked_mac = nic[:mac_address].gsub(':','')
             if driver_mac_address[naked_mac]
               vm_interface_map[driver_mac_address[naked_mac]] = {
