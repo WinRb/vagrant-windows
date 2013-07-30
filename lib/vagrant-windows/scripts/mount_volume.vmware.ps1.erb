@@ -41,7 +41,7 @@ if (-not (Test-Path $BaseDirectory))
   New-Item $BaseDirectory -Type Directory -Force | Out-Null
 }
 
-cmd /c mklink /D "$MountPoint" "\\vmware-host\$ShareName" | out-null
+cmd /c mklink /D "$MountPoint" "\\vmware-host\Shared Folders\$ShareName" | out-null
 
 if ( $LASTEXITCODE -ne 0 )
 {
