@@ -1,3 +1,5 @@
+require_relative '../../helper'
+
 module VagrantWindows
   module Guest
     module Cap

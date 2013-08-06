@@ -1,4 +1,5 @@
 require "#{Vagrant::source_root}/plugins/providers/virtualbox/action/share_folders"
+require_relative '../../../../../helper'
 
 module VagrantPlugins
   module ProviderVirtualBox

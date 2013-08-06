@@ -1,6 +1,6 @@
-require "#{Vagrant::source_root}/plugins/provisioners/chef/provisioner/chef_solo"
 require 'tempfile'
-require_relative '../helper'
+require "#{Vagrant::source_root}/plugins/provisioners/chef/provisioner/chef_solo"
+require_relative '../../../../../helper'
 
 module VagrantPlugins
   module Chef
