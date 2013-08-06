@@ -162,12 +162,18 @@ module VagrantWindows
       def find_winrm_host_port
         expected_guest_port = @machine.config.winrm.guest_port
         @logger.debug("Searching for WinRM port: #{expected_guest_port.inspect}")
-      
+        
         # Look for the forwarded port only by comparing the guest port
-        @machine.provider.driver.read_forwarded_ports.each do |_, _, hostport, guestport|
-          return hostport if guestport == expected_guest_port
+        begin
+          @machine.provider.driver.read_forwarded_ports.each do |_, _, hostport, guestport|
+            return hostport if guestport == expected_guest_port
+          end
+        rescue NoMethodError => e
+          # VMWare provider doesn't support read_forwarded_ports
+          @logger.debug(e.message)
         end
         
+        # just use the configured port as-is
         @machine.config.winrm.port
       end
 
