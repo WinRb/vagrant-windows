@@ -4,6 +4,11 @@ if ($?) {
   schtasks /delete /tn "chef-solo" /f | Out-Null
 }
 
+# Ensure the chef task running file doesn't exist from a previous failure
+if (Test-Path "<%= options[:chef_task_running] %>") {
+  del "<%= options[:chef_task_running] %>"
+}
+
 # schedule the task to run once in the far distant future
 schtasks /create /tn "chef-solo" /xml "<%= options[:chef_task_xml] %>" /ru "<%= options[:user] %>" /rp "<%= options[:pass] %>" | Out-Null
 
