@@ -66,6 +66,7 @@ module VagrantWindows
           # Connect via WinRM and execute the command in the shell.
           exceptions = [
               HTTPClient::KeepAliveDisconnected,
+              WinRM::WinRMHTTPTransportError,
               Errno::EACCES,
               Errno::EADDRINUSE,
               Errno::ECONNREFUSED,
@@ -118,8 +119,58 @@ module VagrantWindows
         opts = { :error_check => false }.merge(opts || {})
         execute(command, opts) == 0
       end
-      
+
       def upload(from, to)
+        opts = {
+            :error_check => true,
+            :error_class => Errors::WinRMExecutionError,
+            :error_key   => :winrm_bad_exit_status,
+            :sudo        => false,
+            :shell       => :powershell,
+            :from        => from,
+            :to          => to
+        }.merge(opts || {})
+        exit_status = 0
+        begin
+          # Connect via WinRM and execute the command in the shell.
+          exceptions = [
+              HTTPClient::KeepAliveDisconnected,
+              WinRM::WinRMHTTPTransportError,
+              Errno::EACCES,
+              Errno::EADDRINUSE,
+              Errno::ECONNREFUSED,
+              Errno::ECONNRESET,
+              Errno::ENETUNREACH,
+              Errno::EHOSTUNREACH,
+              Timeout::Error
+          ]
+          exit_status = retryable(:tries => @machine.config.winrm.max_tries, :on => exceptions, :sleep => 10) do
+            do_upload(from, to)
+          end
+        rescue StandardError => e
+          # return a more specific auth error for 401 errors
+          if e.message.include?("401")
+            raise Errors::WinRMAuthorizationError,
+                  :user => @machine.config.winrm.username,
+                  :password => @machine.config.winrm.password,
+                  :endpoint => endpoint,
+                  :message => e.message
+          end
+          # failed for an unknown reason, didn't even get an exit status
+          raise Errors::WinRMExecutionError,
+                :shell => opts[:shell],
+                :message => e.message
+        end
+        # Check for any exit status errors
+        if opts[:error_check] && exit_status != 0
+          error_opts = opts.merge(:_key => opts[:error_key], :exit_status => exit_status)
+          raise error_opts[:error_class], error_opts
+        end
+
+        exit_status
+      end
+      
+      def do_upload(from, to)
         @logger.debug("Uploading: #{from} to #{to}")
         
         file = "winrm-upload-#{rand()}"
