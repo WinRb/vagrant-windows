@@ -47,6 +47,12 @@ Prior to enabling WinRM, you must ensure the following services are enabled:
    winrm set winrm/config/service @{AllowUnencrypted="true"}
    winrm set winrm/config/service/auth @{Basic="true"}
 ```
+* note
+If you want to run the winrm commands from PowerShell you need to put ```@{MaxMemoryPerShellMB="512"}``` etc in single quotes:
+
+```
+   winrm set winrm/config/winrs '@{MaxMemoryPerShellMB="512"}'
+```
 
 #### Last steps 
 
