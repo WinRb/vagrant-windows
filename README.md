@@ -3,9 +3,21 @@ Installing Vagrant-Windows
 
 - Vagrant 1.0 should use <code>gem "vagrant-windows", "~> 0.1.2"</code>
 - Vagrant 1.1 should use <code>gem "vagrant-windows", "~> 1.0.0"</code>
-- Vagrant 1.2 is not yet supported. There needs to be a refactor to support capabilities. We are looking for a backwards compatiable way to implement this.  
-  
-To install you need to execute `vagrant plugin install vagrant-windows`. For Vagrant 1.0 execute `vagrant plugin install vagrant-windows --plugin-version 0.1.2`.  
+- Vagrant 1.2 is not yet supported. There needs to be a refactor to support capabilities. We are looking for a backwards compatiable way to implement this.
+
+To install you need to execute `vagrant plugin install vagrant-windows`. For Vagrant 1.0 execute `vagrant plugin install vagrant-windows --plugin-version 0.1.2`.
+
+### Installing Vagrant-Windows From Source
+If you want to install from source, use the following method (this would be for 1.2.0):
+
+```
+ bundle install
+ bundle exec rake
+ vagrant plugin install pkg/vagrant-windows-1.2.0.gem
+```
+
+Keep in mind you should have Ruby 1.9.3 and Ruby DevKit installed. Check out the following gist that can get you what you need (from blank system to fully ready): [Install Vagrant Windows Plugin From Source Gist](https://gist.github.com/ferventcoder/6251225).
+
 
 Supported Guest Operating Systems (Your VM)
 ===========================================
