@@ -22,7 +22,7 @@ module VagrantPlugins
           module_paths = @module_paths.map { |_, to| to }
           if !@module_paths.empty?
             # Prepend the default module path
-            module_paths.unshift("/etc/puppet/modules")
+            module_paths.unshift("/ProgramData/PuppetLabs/puppet/etc/modules")
 
             # Add the command line switch to add the module path
             options << "--modulepath '#{module_paths.join(';')}'"
@@ -63,7 +63,7 @@ module VagrantPlugins
           # Setup the module paths
           @module_paths = []
           @expanded_module_paths.each_with_index do |path, i|
-            @module_paths << [path, File.join(config.pp_path, "modules-#{i}")]
+            @module_paths << [path, File.join(config.temp_dir, "modules-#{i}")]
           end
 
           @logger.debug("Syncing folders from puppet configure")
