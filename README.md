@@ -1,10 +1,19 @@
 Installing Vagrant-Windows
 ==========================
 
-- Vagrant 1.0 should use <code>gem "vagrant-windows", "~> 0.1.2"</code>
-- Vagrant 1.1+ should use <code>gem "vagrant-windows", "~> 1.2.0"</code>
-  
-To install you need to execute `vagrant plugin install vagrant-windows`. For Vagrant 1.0 execute `vagrant plugin install vagrant-windows --plugin-version 0.1.2`.
+For Vagrant 1.1.x and 1.2.x execute `vagrant plugin install vagrant-windows`.
+For Vagrant 1.0.x execute `vagrant plugin install vagrant-windows --plugin-version 0.1.2`.
+
+### Installing Vagrant-Windows From Source
+If you want to install from source, use the following method (this would be for 1.2.0):
+
+```
+ bundle install
+ bundle exec rake
+ vagrant plugin install pkg/vagrant-windows-1.2.0.gem
+```
+
+Keep in mind you should have Ruby 1.9.3 and Ruby DevKit installed. Check out the following gist that can get you what you need (from blank system to fully ready): [Install Vagrant Windows Plugin From Source Gist](https://gist.github.com/ferventcoder/6251225).
 
 Supported Guest Operating Systems (Your VM)
 ===========================================
@@ -46,10 +55,12 @@ Prior to enabling WinRM, you must ensure the following services are enabled:
    winrm set winrm/config/service @{AllowUnencrypted="true"}
    winrm set winrm/config/service/auth @{Basic="true"}
 ```
+* note
+If you want to run the winrm commands from PowerShell you need to put ```@{MaxMemoryPerShellMB="512"}``` etc in single quotes:
 
-  - Create a vagrant user, for things to work out of the box username and password should both be "vagrant".
-  - Turn off UAC (Msconfig)
-  - Disable complex passwords
+```
+   winrm set winrm/config/winrs '@{MaxMemoryPerShellMB="512"}'
+```
 
 #### Last steps 
 
