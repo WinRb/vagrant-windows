@@ -265,13 +265,13 @@ module VagrantWindows
         
         if shell.eql? :cmd
           output = session.cmd(command) do |out, err|
-            handle_out(:stdout, out, &block)
-            handle_out(:stderr, err, &block)
+            block.call(:stdout, out) if block_given? && out
+            block.call(:stderr, err) if block_given? && err
           end
         elsif shell.eql? :powershell
           output = session.powershell(command) do |out, err|
-            handle_out(:stdout, out, &block)
-            handle_out(:stderr, err, &block)
+            block.call(:stdout, out) if block_given? && out
+            block.call(:stderr, err) if block_given? && err
           end
         else
           raise Errors::WinRMInvalidShell, :shell => shell
@@ -284,16 +284,6 @@ module VagrantWindows
         return exit_status
       end
       
-      def handle_out(type, data, &block)
-        if block_given? && data
-          if data =~ /\n/
-            data.split(/\n/).each { |d| block.call(type, d) }
-          else
-            block.call(type, data)
-          end
-        end
-      end
-
     end #WinRM class
   end
 end
