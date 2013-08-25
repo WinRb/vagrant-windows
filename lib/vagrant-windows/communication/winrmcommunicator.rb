@@ -33,13 +33,18 @@ module VagrantWindows
         
         Timeout.timeout(@machine.config.winrm.timeout) do
           execute("hostname") do |type, data|
-            @logger.debug("hostname: #{data}")
+            @logger.info("hostname: #{data}")
           end
         end
 
         # If we reached this point then we successfully connected
-        logger.debug("WinRM is ready!")
+        logger.info("WinRM is ready!")
         true
+        rescue Vagrant::Errors::VagrantError => e
+        # We catch a `VagrantError` which would signal that something went
+        # wrong expectedly in the `connect`, which means we didn't connect.
+        @logger.info("WinRM not up: #{e.inspect}")
+        return false
       end
       
       def execute(command, opts=nil, &block)
@@ -59,7 +64,17 @@ module VagrantWindows
         
         begin
           # Connect via WinRM and execute the command in the shell.
-          exceptions = [HTTPClient::KeepAliveDisconnected] 
+          exceptions = [
+              HTTPClient::KeepAliveDisconnected,
+              WinRM::WinRMHTTPTransportError,
+              Errno::EACCES,
+              Errno::EADDRINUSE,
+              Errno::ECONNREFUSED,
+              Errno::ECONNRESET,
+              Errno::ENETUNREACH,
+              Errno::EHOSTUNREACH,
+              Timeout::Error
+          ]
           exit_status = retryable(:tries => @machine.config.winrm.max_tries, :on => exceptions, :sleep => 10) do
             shell_execute(command, opts[:shell], &block)
           end
@@ -104,8 +119,58 @@ module VagrantWindows
         opts = { :error_check => false }.merge(opts || {})
         execute(command, opts) == 0
       end
-      
+
       def upload(from, to)
+        opts = {
+            :error_check => true,
+            :error_class => Errors::WinRMExecutionError,
+            :error_key   => :winrm_bad_exit_status,
+            :sudo        => false,
+            :shell       => :powershell,
+            :from        => from,
+            :to          => to
+        }.merge(opts || {})
+        exit_status = 0
+        begin
+          # Connect via WinRM and execute the command in the shell.
+          exceptions = [
+              HTTPClient::KeepAliveDisconnected,
+              WinRM::WinRMHTTPTransportError,
+              Errno::EACCES,
+              Errno::EADDRINUSE,
+              Errno::ECONNREFUSED,
+              Errno::ECONNRESET,
+              Errno::ENETUNREACH,
+              Errno::EHOSTUNREACH,
+              Timeout::Error
+          ]
+          exit_status = retryable(:tries => @machine.config.winrm.max_tries, :on => exceptions, :sleep => 10) do
+            do_upload(from, to)
+          end
+        rescue StandardError => e
+          # return a more specific auth error for 401 errors
+          if e.message.include?("401")
+            raise Errors::WinRMAuthorizationError,
+                  :user => @machine.config.winrm.username,
+                  :password => @machine.config.winrm.password,
+                  :endpoint => endpoint,
+                  :message => e.message
+          end
+          # failed for an unknown reason, didn't even get an exit status
+          raise Errors::WinRMExecutionError,
+                :shell => opts[:shell],
+                :message => e.message
+        end
+        # Check for any exit status errors
+        if opts[:error_check] && exit_status != 0
+          error_opts = opts.merge(:_key => opts[:error_key], :exit_status => exit_status)
+          raise error_opts[:error_class], error_opts
+        end
+
+        exit_status
+      end
+      
+      def do_upload(from, to)
         @logger.debug("Uploading: #{from} to #{to}")
         
         file = "winrm-upload-#{rand()}"
@@ -148,21 +213,34 @@ module VagrantWindows
         {
           :user => @machine.config.winrm.username,
           :pass => @machine.config.winrm.password,
-          :host => @machine.config.winrm.host,
+          :host => winrm_host(),
           :port => winrm_port(),
           :operation_timeout => @machine.config.winrm.timeout,
           :basic_auth_only => true
         }.merge ({})
       end
+
+      def winrm_host
+        @winrm_host ||= find_winrm_host()
+      end
       
       def winrm_port
         @winrm_port ||= find_winrm_host_port()
+      end
+
+      def find_winrm_host
+        # Get the SSH info for the machine, raise an exception if the
+        # provider is saying that SSH is not ready.
+        ssh_info = @machine.ssh_info
+        raise Vagrant::Errors::SSHNotReady if ssh_info.nil?
+        @logger.info("Host: #{ssh_info[:host]}")
+        return ssh_info[:host]
       end
       
       def find_winrm_host_port
         expected_guest_port = @machine.config.winrm.guest_port
         @logger.debug("Searching for WinRM port: #{expected_guest_port.inspect}")
-        
+
         # Look for the forwarded port only by comparing the guest port
         begin
           @machine.provider.driver.read_forwarded_ports.each do |_, _, hostport, guestport|
@@ -191,13 +269,13 @@ module VagrantWindows
         
         if shell.eql? :cmd
           output = session.cmd(command) do |out, err|
-            handle_out(:stdout, out, &block)
-            handle_out(:stderr, err, &block)
+            block.call(:stdout, out) if block_given? && out
+            block.call(:stderr, err) if block_given? && err
           end
         elsif shell.eql? :powershell
           output = session.powershell(command) do |out, err|
-            handle_out(:stdout, out, &block)
-            handle_out(:stderr, err, &block)
+            block.call(:stdout, out) if block_given? && out
+            block.call(:stderr, err) if block_given? && err
           end
         else
           raise Errors::WinRMInvalidShell, :shell => shell
@@ -210,16 +288,6 @@ module VagrantWindows
         return exit_status
       end
       
-      def handle_out(type, data, &block)
-        if block_given? && data
-          if data =~ /\n/
-            data.split(/\n/).each { |d| block.call(type, d) }
-          else
-            block.call(type, data)
-          end
-        end
-      end
-
     end #WinRM class
   end
 end

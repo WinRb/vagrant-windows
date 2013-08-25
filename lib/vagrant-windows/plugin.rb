@@ -79,6 +79,11 @@ module VagrantWindows
         require_relative "guest/cap/mount_virtualbox_shared_folder"
         VagrantWindows::Guest::Cap::MountVirtualBoxSharedFolder
       end
+
+      guest_capability(:windows, :mount_vmware_shared_folder) do
+        require_relative "guest/cap/mount_vmware_shared_folder"
+        VagrantWindows::Guest::Cap::MountVMwareSharedFolder
+      end
     
     end
 

@@ -10,7 +10,10 @@ module VagrantWindows
         
         def self.configure_networks(machine, networks)
           @@logger.debug("networks: #{networks.inspect}")
-          vm_interface_map = create_vm_interface_map(machine)
+          if (machine.provider_name != :vmware_fusion) && (machine.provider_name != :vmware_workstation)
+            vm_interface_map = create_vm_interface_map(machine)
+          end
+
           networks.each do |network|
             interface = vm_interface_map[network[:interface]+1]
             if interface.nil?
@@ -52,11 +55,7 @@ module VagrantWindows
           vm_interface_map = {}
           driver_mac_address = machine.provider.driver.read_mac_addresses.invert
           @@logger.debug("mac addresses: #{driver_mac_address.inspect}")
-          
-          # Get all NICs that have a MAC address
-          # http://msdn.microsoft.com/en-us/library/windows/desktop/aa394216(v=vs.85).aspx
-          wql = "SELECT * FROM Win32_NetworkAdapter WHERE MACAddress IS NOT NULL"
-          machine.communicate.session.wql(wql)[:win32_network_adapter].each do |nic|
+          get_network_adapter_array(machine).each do |nic|
             @@logger.debug("nic: #{nic.inspect}")
             naked_mac = nic[:mac_address].gsub(':','')
             if driver_mac_address[naked_mac]
@@ -87,6 +86,81 @@ module VagrantWindows
           else
             raise WindowsError, "#{network[:type]} network type is not supported, try static or dhcp"
           end
+        end
+
+        def self.get_network_adapter_array(machine)
+          done = false
+          result = []
+          version = checkWSManVersion(machine)
+          @@logger.debug("Version: #{version}")
+          if Integer(version) == 2
+            result = get_network_adapter_array_from_v2(machine)
+          else
+            result = get_network_adapter_array_from_v3(machine)                         
+          end
+          return result        
+        end
+
+        def self.checkWSManVersion(machine)
+          @@logger.debug("Checking WSMan version.")
+          script = '((test-wsman).productversion.split(" ") | select -last 1).split("\.")[0]'
+          version = ''
+          machine.communicate.execute(script) do |type, line|
+            if type == :stdout
+              if !line.nil?
+                version = version + "#{line}"
+              end
+            end
+          end
+          @@logger.debug("Check WSMAN Version output #{version}")
+          return version    
+        end
+
+        def self.get_network_adapter_array_from_v3(machine)
+          @@logger.debug("Found WSMAN 3.  Trying workaround.")
+          script = '$adapters = get-ciminstance win32_networkadapter -filter "macaddress is not null" 
+$processed = @()
+foreach ($adapter in $adapters)
+{
+    $Processed += new-object PSObject -Property @{
+        mac_address = $adapter.macaddress
+        net_connection_id = $adapter.netconnectionid
+        interface_index = $adapter.interfaceindex
+        index = $adapter.index
+    }
+ } 
+ convertto-json -inputobject $processed
+ '
+          output = ''
+          machine.communicate.execute(script) do |type, line|
+            if type == :stdout
+              if !line.nil?     
+                @@logger.debug(line)           
+                output = output + "#{line}"
+              end
+            end
+          end
+          @@logger.debug(output)
+          adapterarray = JSON.parse(output)
+          newadapterarray = []
+          adapterarray.each do |nic|
+            newadapterarray << nic.inject({}){|memo,(k,v)| memo[k.to_sym] = v; memo}
+          end          
+          @@logger.debug("Parsed output from PowerShell is #{newadapterarray.inspect}")
+          newadapterarray.each do |nic|
+            @@logger.warn("Checking parsed nic")
+            @@logger.warn("    #{nic.inspect}")    
+          end      
+          return newadapterarray
+        end
+
+        def self.get_network_adapter_array_from_v2(machine)
+          @@logger.debug("Using the tradditional method.")
+          # Get all NICs that have a MAC address
+          # http://msdn.microsoft.com/en-us/library/windows/desktop/aa394216(v=vs.85).aspx
+          wql = 'SELECT * FROM Win32_NetworkAdapter WHERE MACAddress IS NOT NULL'
+          result = machine.communicate.session.wql(wql)[:win32_network_adapter]
+          return result
         end
 
       end

@@ -44,9 +44,8 @@ module VagrantPlugins
               # Output the data with the proper color based on the stream.
               color = type == :stdout ? :green : :red
 
-              # Note: Be sure to chomp the data to avoid the newlines that the
-              # Chef outputs.
-              @machine.env.ui.info(data.chomp, :color => color, :prefix => false)
+              @machine.env.ui.info(
+                data, :color => color, :new_line => false, :prefix => false)
             end
 
             # There is no need to run Chef again if it converges
