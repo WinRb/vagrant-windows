@@ -159,7 +159,7 @@ foreach ($adapter in $adapters)
           # Get all NICs that have a MAC address
           # http://msdn.microsoft.com/en-us/library/windows/desktop/aa394216(v=vs.85).aspx
           wql = 'SELECT * FROM Win32_NetworkAdapter WHERE MACAddress IS NOT NULL'
-          result = machine.communicate.session.wql(wql)[:win32_network_adapter]
+          result = machine.communicate.wql(wql)[:win32_network_adapter]
           return result
         end
 
