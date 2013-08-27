@@ -14,6 +14,9 @@ module VagrantWindows
       include Vagrant::Util::ANSIEscapeCodeRemover
       include Vagrant::Util::Retryable
       
+      # These are the exceptions that we retry because they represent
+      # errors that are generally fixed from a retry and don't
+      # necessarily represent immediate failure cases.
       @@exceptions_to_retry_on = [
         HTTPClient::KeepAliveDisconnected,
         WinRM::WinRMHTTPTransportError,
@@ -23,7 +26,8 @@ module VagrantWindows
         Errno::ECONNRESET,
         Errno::ENETUNREACH,
         Errno::EHOSTUNREACH,
-        Timeout::Error ]
+        Timeout::Error
+      ]
 
       attr_reader :logger
       attr_reader :username
@@ -108,7 +112,11 @@ module VagrantWindows
       end
       
       def new_session
-        @logger.debug("Creating WinRM session to #{endpoint} with options: #{endpoint_options}")
+        @logger.info("Attempting to connect to WinRM...")
+        @logger.info("  - Host: #{@host}")
+        @logger.info("  - Port: #{@port}")
+        @logger.info("  - Username: #{@username}")
+        
         client = ::WinRM::WinRMWebService.new(endpoint, :plaintext, endpoint_options)
         client.set_timeout(@timeout_in_seconds)
         client.toggle_nori_type_casting(:off) #we don't want coersion of types

@@ -7,6 +7,7 @@ require 'vagrant/util/platform'
 require 'vagrant/util/retryable'
 require_relative '../errors'
 require_relative 'winrmshell'
+require_relative 'winrmfinder'
 
 module VagrantWindows
   module Communication
@@ -18,6 +19,7 @@ module VagrantWindows
 
       attr_reader :logger
       attr_reader :machine
+      attr_reader :winrm_finder
       
       def self.match?(machine)
         machine.config.vm.guest.eql? :windows
@@ -27,6 +29,7 @@ module VagrantWindows
         @machine = machine
         @logger = Log4r::Logger.new("vagrant_windows::communication::winrmcommunicator")
         @logger.debug("initializing WinRMCommunicator")
+        @winrm_finder = WinRMFinder.new(machine)
       end
 
       def ready?
@@ -58,7 +61,7 @@ module VagrantWindows
       
       def test(command, opts=nil)
         # HACK: to speed up Vagrant 1.2 OS detection, skip checking for *nix OS
-        return false if not (command =~ /^uname|^cat \/etc|^cat \/proc|grep 'Fedora/).nil?
+        return false unless (command =~ /^uname|^cat \/etc|^cat \/proc|grep 'Fedora/).nil?
         execute(command) == 0
       end
 
@@ -82,9 +85,6 @@ module VagrantWindows
           $new_file = [System.IO.Path]::GetFullPath(\"#{to}\")
           [System.IO.File]::WriteAllBytes($new_file,$bytes)
         EOH
-        
-        # TODO: Is this correct? This was the old communicator upload return status code
-        return 0
       end
       
       def download(from, to=nil)
@@ -104,11 +104,11 @@ module VagrantWindows
       
       def new_session
         WinRMShell.new(
-          find_winrm_host(),
+          @winrm_finder.winrm_host_address(),
           @machine.config.winrm.username,
           @machine.config.winrm.password,
           {
-            :port => find_winrm_host_port(),
+            :port => @winrm_finder.winrm_host_port(),
             :timeout_in_seconds => @machine.config.winrm.timeout,
             :max_tries => @machine.config.winrm.max_tries
           })
@@ -116,33 +116,6 @@ module VagrantWindows
 
       def session
         @session ||= new_session
-      end
-
-      def find_winrm_host
-        # Get the SSH info for the machine, raise an exception if the
-        # provider is saying that SSH is not ready.
-        ssh_info = @machine.ssh_info
-        raise Vagrant::Errors::SSHNotReady if ssh_info.nil?
-        @logger.info("Host: #{ssh_info[:host]}")
-        return ssh_info[:host]
-      end
-      
-      def find_winrm_host_port
-        expected_guest_port = @machine.config.winrm.guest_port
-        @logger.debug("Searching for WinRM port: #{expected_guest_port.inspect}")
-
-        # Look for the forwarded port only by comparing the guest port
-        begin
-          @machine.provider.driver.read_forwarded_ports.each do |_, _, hostport, guestport|
-            return hostport if guestport == expected_guest_port
-          end
-        rescue NoMethodError => e
-          # VMWare provider doesn't support read_forwarded_ports
-          @logger.debug(e.message)
-        end
-        
-        # just use the configured port as-is
-        @machine.config.winrm.port
       end
       
     end #WinRM class
