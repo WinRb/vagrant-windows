@@ -99,6 +99,11 @@ module VagrantWindows
         session.wql(query)
       end
       
+      def session
+        @session ||= new_session
+      end
+      alias_method :session, :winrmshell
+      
       
       protected
       
@@ -112,10 +117,6 @@ module VagrantWindows
             :timeout_in_seconds => @machine.config.winrm.timeout,
             :max_tries => @machine.config.winrm.max_tries
           })
-      end
-
-      def session
-        @session ||= new_session
       end
       
     end #WinRM class

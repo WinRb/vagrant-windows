@@ -1,0 +1,37 @@
+require "vagrant-windows/network/guestnetwork"
+require "vagrant-windows/communication/winrmshell"
+
+describe VagrantWindows::Network::GuestNetwork do
+  
+  before(:all) do
+    # This test requires you already have a running Windows Server 2008 R2 Vagrant VM
+    # Not ideal, but you have to start somewhere
+    shell = VagrantWindows::Communication::WinRMShell.new("localhost", "vagrant", "vagrant")
+    @guestnetwork = VagrantWindows::Network::GuestNetwork.new(shell)
+  end
+  
+  describe "wsman_version" do
+    it "network_adapters" do
+      nics = @guestnetwork.network_adapters()
+      #puts nics.pretty_inspect()
+
+      expect(nics.count).to be >= 1
+      nic = nics[0]
+
+      expect(nic.has_key?(:mac_address)).to be_true
+      expect(nic.has_key?(:net_connection_id)).to be_true
+      expect(nic.has_key?(:interface_index)).to be_true
+      expect(nic.has_key?(:index)).to be_true
+      
+      expect(nic[:mac_address]).to match(/^([0-9A-F]{2}[:]){5}([0-9A-F]{2})$/)
+      Integer(nic[:interface_index])
+      Integer(nic[:index])
+    end
+    
+    it "should return DHCP is enabled for first adapter" do
+      nics = @guestnetwork.network_adapters()
+      expect(@guestnetwork.is_dhcp_enabled(nics[0][:index])).to be_true
+    end
+  end
+
+end
