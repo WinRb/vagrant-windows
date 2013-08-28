@@ -1,4 +1,5 @@
 require 'log4r'
+require_relative '../../vagrant-windows'
 require_relative '../communication/winrmshell'
 require_relative '../errors'
 
@@ -41,7 +42,41 @@ module VagrantWindows
         has_dhcp_enabled
       end
       
+      # Configures the specified interface for DHCP
+      #
+      # @param [Integer] The interface index.
+      # @param [String] The unique name of the NIC, such as 'Local Area Connection'.
+      def configure_dhcp_interface(nic_index, net_connection_id)
+        @logger.info("Configuring NIC #{net_connection_id} for DHCP")
+        if !is_dhcp_enabled(nic_index)
+          netsh = "netsh interface ip set address \"#{net_connection_id}\" dhcp"
+          @winrmshell.powershell(netsh)
+        end
+      end
       
+      # Configures the specified interface using a static address
+      #
+      # @param [Integer] The interface index.
+      # @param [String] The unique name of the NIC, such as 'Local Area Connection'.
+      # @param [String] The static IP address to assign to the specified NIC.
+      # @param [String] The network mask to use with the static IP.
+      def configure_static_interface(nic_index, net_connection_id, ip, netmask)
+        @logger.info("Configuring NIC #{net_connection_id} using static ip #{ip}")
+        #netsh interface ip set address "Local Area Connection 2" static 192.168.33.10 255.255.255.0
+        netsh = "netsh interface ip set address \"#{net_connection_id}\" static #{ip} #{netmask}"
+        @winrmshell.powershell(netsh)
+      end
+      
+      # Sets all networks on the guest to 'Work Network' mode. This is
+      # to allow guest access from the host via a private IP on Win7
+      # https://github.com/WinRb/vagrant-windows/issues/63
+      def set_all_networks_to_work()
+        @logger.info("Setting all networks to 'Work Network'")
+        command = VagrantWindows.load_script("set_work_network.ps1")
+        @winrmshell.powershell(command)
+      end
+      
+
       protected
       
       # Checks the WinRS version on the guest. Usually 2 on Windows 7/2008

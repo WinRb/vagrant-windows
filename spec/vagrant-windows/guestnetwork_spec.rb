@@ -13,7 +13,7 @@ describe VagrantWindows::Network::GuestNetwork do
   describe "wsman_version" do
     it "network_adapters" do
       nics = @guestnetwork.network_adapters()
-      #puts nics.pretty_inspect()
+      puts nics.pretty_inspect()
 
       expect(nics.count).to be >= 1
       nic = nics[0]
@@ -28,9 +28,20 @@ describe VagrantWindows::Network::GuestNetwork do
       Integer(nic[:index])
     end
     
-    it "should return DHCP is enabled for first adapter" do
+    it "should configure DHCP for adapter" do
       nics = @guestnetwork.network_adapters()
+      @guestnetwork.configure_dhcp_interface(nics[0][:index], nics[0][:net_connection_id])
       expect(@guestnetwork.is_dhcp_enabled(nics[0][:index])).to be_true
+    end
+    
+    it "should configure static IP for adapter" do
+      nics = @guestnetwork.network_adapters()
+      @guestnetwork.configure_static_interface(nics[1][:index], nics[1][:net_connection_id], "192.168.0.100", "255.255.255.0")
+      expect(@guestnetwork.is_dhcp_enabled(nics[1][:index])).to be_false
+    end
+    
+    it "should configure all networks to work mode" do
+      @guestnetwork.set_all_networks_to_work()
     end
   end
 

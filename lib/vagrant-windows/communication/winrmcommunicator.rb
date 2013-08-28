@@ -102,7 +102,7 @@ module VagrantWindows
       def session
         @session ||= new_session
       end
-      alias_method :session, :winrmshell
+      alias_method :winrmshell, :session
       
       
       protected
