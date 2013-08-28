@@ -103,7 +103,7 @@ module VagrantWindows
         # Get all NICs that have a MAC address
         # http://msdn.microsoft.com/en-us/library/windows/desktop/aa394216(v=vs.85).aspx
         adapters = @winrmshell.wql(WQL_NET_ADAPTERS_V2)[:win32_network_adapter]
-        @logger.debug("#{adapters.pretty_inspect}")
+        @logger.debug("#{adapters.inspect}")
         return adapters
       end
       
@@ -124,7 +124,7 @@ module VagrantWindows
         JSON.parse(output).each do |nic|
           adapters << nic.inject({}){ |memo,(k,v)| memo[k.to_sym] = v; memo }
         end          
-        @logger.debug("#{adapters.pretty_inspect}")
+        @logger.debug("#{adapters.inspect}")
         return adapters
       end
         
