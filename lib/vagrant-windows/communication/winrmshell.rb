@@ -1,9 +1,6 @@
 require 'timeout'
-require 'winrm'
 require 'log4r'
-require 'vagrant/util/ansi_escape_code_remover'
-require 'vagrant/util/file_mode'
-require 'vagrant/util/platform'
+require 'winrm'
 require 'vagrant/util/retryable'
 require_relative '../errors'
 
@@ -11,7 +8,6 @@ module VagrantWindows
   module Communication
     class WinRMShell
 
-      include Vagrant::Util::ANSIEscapeCodeRemover
       include Vagrant::Util::Retryable
       
       # These are the exceptions that we retry because they represent

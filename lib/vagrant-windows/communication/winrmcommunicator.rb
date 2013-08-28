@@ -1,10 +1,5 @@
 require 'timeout'
-require 'winrm'
 require 'log4r'
-require 'vagrant/util/ansi_escape_code_remover'
-require 'vagrant/util/file_mode'
-require 'vagrant/util/platform'
-require 'vagrant/util/retryable'
 require_relative '../errors'
 require_relative 'winrmshell'
 require_relative 'winrmfinder'
@@ -13,9 +8,6 @@ module VagrantWindows
   module Communication
     # Provides communication with the VM via WinRM.
     class WinRMCommunicator < Vagrant.plugin("2", :communicator)
-
-      include Vagrant::Util::ANSIEscapeCodeRemover
-      include Vagrant::Util::Retryable
 
       attr_reader :logger
       attr_reader :machine
