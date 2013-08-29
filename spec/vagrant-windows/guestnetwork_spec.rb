@@ -1,13 +1,13 @@
-require "vagrant-windows/network/guestnetwork"
+require "vagrant-windows/communication/guestnetwork"
 require "vagrant-windows/communication/winrmshell"
 
-describe VagrantWindows::Network::GuestNetwork do
+describe VagrantWindows::Communication::GuestNetwork do
   
   before(:all) do
     # This test requires you already have a running Windows Server 2008 R2 Vagrant VM
     # Not ideal, but you have to start somewhere
     @shell = VagrantWindows::Communication::WinRMShell.new("localhost", "vagrant", "vagrant")
-    @guestnetwork = VagrantWindows::Network::GuestNetwork.new(@shell)
+    @guestnetwork = VagrantWindows::Communication::GuestNetwork.new(@shell)
   end
   
   describe "wsman_version" do

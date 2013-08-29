@@ -4,7 +4,7 @@ require_relative '../communication/winrmshell'
 require_relative '../errors'
 
 module VagrantWindows
-  module Network
+  module Communication
     
     # Manages the remote Windows guest network
     class GuestNetwork

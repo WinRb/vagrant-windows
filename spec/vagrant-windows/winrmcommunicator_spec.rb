@@ -1,4 +1,4 @@
-require "vagrant-windows/network/guestnetwork"
+require "vagrant-windows/communication/guestnetwork"
 require "vagrant-windows/communication/winrmshell"
 
 describe VagrantWindows::Communication::WinRMCommunicator do
