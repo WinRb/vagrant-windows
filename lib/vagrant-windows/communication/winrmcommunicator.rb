@@ -91,6 +91,10 @@ module VagrantWindows
         session.wql(query)
       end
       
+      def set_winrmshell(winrmshell)
+        @session = winrmshell
+      end
+      
       def session
         @session ||= new_session
       end

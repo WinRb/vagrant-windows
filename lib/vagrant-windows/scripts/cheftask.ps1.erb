@@ -39,11 +39,9 @@ while (Test-Path "<%= options[:chef_task_running] %>") {
   $numLinesToRead = $numLines - $numLinesRead
   
   $text | select -first $numLinesToRead -skip $numLinesRead | ForEach {
-    $success = $success -and "$_".contains("ERROR: Running exception handlers")
     Write-Host "$_"
   }
   $numLinesRead += $numLinesToRead
 }
 
-$exitCode = switch($success) { $TRUE { 0 } default { 1 }}
-exit $exitCode
+exit Get-Content "<%= options[:chef_task_exitcode] %>"

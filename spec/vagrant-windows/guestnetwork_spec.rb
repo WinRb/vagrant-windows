@@ -6,14 +6,14 @@ describe VagrantWindows::Network::GuestNetwork do
   before(:all) do
     # This test requires you already have a running Windows Server 2008 R2 Vagrant VM
     # Not ideal, but you have to start somewhere
-    shell = VagrantWindows::Communication::WinRMShell.new("localhost", "vagrant", "vagrant")
-    @guestnetwork = VagrantWindows::Network::GuestNetwork.new(shell)
+    @shell = VagrantWindows::Communication::WinRMShell.new("localhost", "vagrant", "vagrant")
+    @guestnetwork = VagrantWindows::Network::GuestNetwork.new(@shell)
   end
   
   describe "wsman_version" do
     it "network_adapters" do
       nics = @guestnetwork.network_adapters()
-      puts nics.pretty_inspect()
+      #puts nics.pretty_inspect()
 
       expect(nics.count).to be >= 1
       nic = nics[0]

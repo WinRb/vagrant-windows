@@ -1,17 +1,15 @@
-$exitCode = 0
+$exitCode = -1
 Set-ExecutionPolicy Unrestricted -force;
 
 Try
 {
   "running" | Out-File "<%= options[:chef_task_running] %>"
-  Start-Process "<%= options[:chef_binary_path] %>" -ArgumentList "<%= options[:chef_arguments] %>" -NoNewWindow -Wait -RedirectStandardOutput "<%= options[:chef_stdout_log] %>" -RedirectStandardError "<%= options[:chef_stderr_log] %>"
-}
-Catch [system.exception]
-{
-  $exitCode = -1
+  $process = (Start-Process "<%= options[:chef_binary_path] %>" -ArgumentList "<%= options[:chef_arguments] %>" -NoNewWindow -PassThru -Wait -RedirectStandardOutput "<%= options[:chef_stdout_log] %>" -RedirectStandardError "<%= options[:chef_stderr_log] %>")
+  $exitCode = $process.ExitCode
 }
 Finally
 {
+  $exitCode | Out-File "<%= options[:chef_task_exitcode] %>"
   del "<%= options[:chef_task_running] %>"
 }
 
