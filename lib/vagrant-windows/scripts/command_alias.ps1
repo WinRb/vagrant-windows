@@ -16,6 +16,10 @@ function test ([Switch] $d, [String] $path) {
   exit 1
 }
 
+function chmod {
+  exit 0
+}
+
 function chown {
   exit 0
 }

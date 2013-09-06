@@ -42,7 +42,7 @@ describe VagrantWindows::Config::WinRM do
     its("host")       { should == "localhost" }
     its("port")       { should == 5985 }
     its("guest_port") { should == 5985 }
-    its("max_tries")  { should == 12 }
+    its("max_tries")  { should == 20 }
     its("timeout")    { should == 1800 }
   end
 
