@@ -1,7 +1,7 @@
-schtasks /query /tn "chef-solo" | Out-Null
+schtasks /query /tn "<%= options[:chef_task_name] %>" | Out-Null
 if ($?) {
   # task already exists, kill it
-  schtasks /delete /tn "chef-solo" /f | Out-Null
+  schtasks /delete /tn "<%= options[:chef_task_name] %>" /f | Out-Null
 }
 
 # Ensure the chef task running file doesn't exist from a previous failure
@@ -10,10 +10,10 @@ if (Test-Path "<%= options[:chef_task_running] %>") {
 }
 
 # schedule the task to run once in the far distant future
-schtasks /create /tn "chef-solo" /xml "<%= options[:chef_task_xml] %>" /ru "<%= options[:user] %>" /rp "<%= options[:pass] %>" | Out-Null
+schtasks /create /tn "<%= options[:chef_task_name] %>" /xml "<%= options[:chef_task_xml] %>" /ru "<%= options[:user] %>" /rp "<%= options[:pass] %>" | Out-Null
 
 # start the scheduled task right now
-schtasks /run /tn "chef-solo" | Out-Null
+schtasks /run /tn "<%= options[:chef_task_name] %>" | Out-Null
 
 # wait for run_chef.ps1 to start or timeout after 1 minute
 $timeoutSeconds = 60

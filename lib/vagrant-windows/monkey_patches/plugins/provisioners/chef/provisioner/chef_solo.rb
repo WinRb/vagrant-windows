@@ -83,6 +83,7 @@ module VagrantPlugins
               :user => @machine.config.winrm.username,
               :pass => @machine.config.winrm.password,
               :chef_arguments => chef_arguments,
+              :chef_task_name => 'chef-solo',
               :chef_task_xml => win_friendly_path("#{@config.provisioning_path}/cheftask.xml"),
               :chef_task_running => win_friendly_path("#{@config.provisioning_path}/cheftask.running"),
               :chef_task_exitcode => win_friendly_path("#{@config.provisioning_path}/cheftask.exitcode"),
@@ -90,6 +91,7 @@ module VagrantPlugins
               :chef_task_run_ps1 => win_friendly_path("#{@config.provisioning_path}/cheftaskrun.ps1"),
               :chef_stdout_log => win_friendly_path("#{@config.provisioning_path}/chef-solo.log"),
               :chef_stderr_log => win_friendly_path("#{@config.provisioning_path}/chef-solo.err.log"),
+              :chef_env_vars => {},
               :chef_binary_path => win_friendly_path("#{command_env}#{chef_binary_path("chef-solo")}")
             }
           end
