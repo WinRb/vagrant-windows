@@ -6,7 +6,7 @@ Try
   "running" | Out-File "<%= options[:chef_task_running] %>"
 
   <% options[:chef_env_vars].each do |key, value| %>
-    <%="$env:FACTER_#{key}='#{value}';"%>
+    <%="$env:#{key}='#{value}';"%>
   <% end %>
 
   $process = (Start-Process "<%= options[:chef_binary_path] %>" -ArgumentList "<%= options[:chef_arguments] %>" -NoNewWindow -PassThru -Wait -RedirectStandardOutput "<%= options[:chef_stdout_log] %>" -RedirectStandardError "<%= options[:chef_stderr_log] %>")

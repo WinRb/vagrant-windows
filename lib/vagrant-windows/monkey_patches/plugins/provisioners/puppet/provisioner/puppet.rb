@@ -138,7 +138,7 @@ module VagrantPlugins
               :chef_task_run_ps1 => win_friendly_path("#{@config.temp_dir}/puppettaskrun.ps1"),
               :chef_stdout_log => win_friendly_path("#{@config.temp_dir}/puppet.log"),
               :chef_stderr_log => win_friendly_path("#{@config.temp_dir}/puppet.err.log"),
-              :chef_env_vars => Hash[config.facter.map{|key,val| ["env_#{key}",val] } ],
+              :chef_env_vars => Hash[config.facter.map{|key,val| ["FACTER_#{key}",val] } ],
               :chef_binary_path => win_friendly_path(puppet_bin_location())
             }
           end
