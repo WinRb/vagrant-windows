@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe VagrantWindows::Communication::WinRMCommunicator do
+describe VagrantWindows::Communication::WinRMCommunicator, :integration => true do
   
   before(:all) do
     # This test requires you already have a running Windows Server 2008 R2 Vagrant VM

@@ -8,8 +8,15 @@ Dir.chdir(File.expand_path("../", __FILE__))
 # For gem creation and bundling
 require "bundler/gem_tasks"
 
-# Install the `spec` task so that we can run tests.
+# Run the unit test suite
 RSpec::Core::RakeTask.new do |task|
+    task.pattern = "spec/**/*_spec.rb"
+    task.rspec_opts = [ '--color', '-f documentation' ]
+    task.rspec_opts << '-tunit'
+end
+
+# Run the integration test suite
+RSpec::Core::RakeTask.new(:integration) do |task|
     task.pattern = "spec/**/*_spec.rb"
     task.rspec_opts = [ '--color', '-f documentation' ]
 end

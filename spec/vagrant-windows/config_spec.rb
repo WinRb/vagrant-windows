@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe VagrantWindows::Config::Windows do
+describe VagrantWindows::Config::Windows , :unit => true do
   let(:instance) { described_class.new }
 
   describe "defaults" do

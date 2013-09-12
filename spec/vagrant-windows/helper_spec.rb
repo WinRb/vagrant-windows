@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe VagrantWindows::Helper do
+describe VagrantWindows::Helper , :unit => true do
   
   class DummyHelper
     include VagrantWindows::Helper
@@ -11,7 +11,7 @@ describe VagrantWindows::Helper do
   end
 
   describe "win_friendly_path" do
-    it "should replace slashes with backslashes" do
+    it "should replace slashes with backslashes"  do
       @dummy.win_friendly_path('c:/tmp/dir').should eq('c:\\tmp\\dir')
     end
     
