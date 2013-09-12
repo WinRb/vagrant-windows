@@ -1,21 +1,17 @@
 require 'timeout'
-require 'winrm'
 require 'log4r'
-require 'vagrant/util/ansi_escape_code_remover'
-require 'vagrant/util/file_mode'
-require 'vagrant/util/platform'
-require 'vagrant/util/retryable'
+require_relative '../errors'
+require_relative 'winrmshell'
+require_relative 'winrmfinder'
 
 module VagrantWindows
   module Communication
     # Provides communication with the VM via WinRM.
     class WinRMCommunicator < Vagrant.plugin("2", :communicator)
 
-      include Vagrant::Util::ANSIEscapeCodeRemover
-      include Vagrant::Util::Retryable
-
       attr_reader :logger
       attr_reader :machine
+      attr_reader :winrm_finder
       
       def self.match?(machine)
         machine.config.vm.guest.eql? :windows
@@ -25,85 +21,44 @@ module VagrantWindows
         @machine = machine
         @logger = Log4r::Logger.new("vagrant_windows::communication::winrmcommunicator")
         @logger.debug("initializing WinRMCommunicator")
+        @winrm_finder = WinRMFinder.new(machine)
       end
 
       def ready?
         logger.debug("Checking whether WinRM is ready...")
-        
+
         Timeout.timeout(@machine.config.winrm.timeout) do
-          execute("hostname") do |type, data|
-            @logger.debug("hostname: #{data}")
-          end
+          session.powershell("hostname")
         end
 
-        # If we reached this point then we successfully connected
-        logger.debug("WinRM is ready!")
-        true
-      end
-      
-      def execute(command, opts=nil, &block)
-        opts = {
-          :error_check => true,
-          :error_class => Errors::WinRMExecutionError,
-          :error_key   => :winrm_bad_exit_status,
-          :command     => command,
-          :sudo        => false,
-          :shell       => :powershell
-        }.merge(opts || {})
-
-        if opts[:shell].eql? :powershell
-          command = VagrantWindows.load_script("command_alias.ps1") << "\r\n" << command
-        end
-        exit_status = 0
+        logger.info("WinRM is ready!")
+        return true
         
-        begin
-          # Connect via WinRM and execute the command in the shell.
-          exceptions = [HTTPClient::KeepAliveDisconnected] 
-          exit_status = retryable(:tries => @machine.config.winrm.max_tries, :on => exceptions, :sleep => 10) do
-            shell_execute(command, opts[:shell], &block)
-          end
-        rescue StandardError => e
-          # return a more specific auth error for 401 errors
-          if e.message.include?("401")
-            raise Errors::WinRMAuthorizationError,
-              :user => @machine.config.winrm.username,
-              :password => @machine.config.winrm.password,
-              :endpoint => endpoint,
-              :message => e.message 
-          end
-          # failed for an unknown reason, didn't even get an exit status
-          raise Errors::WinRMExecutionError,
-            :shell => opts[:shell],
-            :command => command,
-            :message => e.message
-        end
-
-        # Check for any exit status errors
-        if opts[:error_check] && exit_status != 0
-          error_opts = opts.merge(:_key => opts[:error_key], :exit_status => exit_status)
-          raise error_opts[:error_class], error_opts 
-        end
-
-        exit_status
+      rescue Vagrant::Errors::VagrantError => e
+        # We catch a `VagrantError` which would signal that something went
+        # wrong expectedly in the `connect`, which means we didn't connect.
+        @logger.info("WinRM not up: #{e.inspect}")
+        return false
       end
       
-      # Wrap Sudo in execute.... One day we could integrate with UAC, but Icky
-      def sudo(command, opts=nil, &block)
-        execute(command, opts, &block)
+      def execute(command, opts={}, &block)
+        if opts[:shell].eql? :cmd
+          session.cmd(command, &block)[:exitcode]
+        else
+          command = VagrantWindows.load_script("command_alias.ps1") << "\r\n" << command
+          session.powershell(command, &block)[:exitcode]
+        end
       end
-      
-      def download(from, to=nil)
-        @logger.warn("Downloading: #{from} to #{to} not supported on Windows guests")
-      end
+      alias_method :sudo, :execute
       
       def test(command, opts=nil)
-        opts = { :error_check => false }.merge(opts || {})
-        execute(command, opts) == 0
+        # HACK: to speed up Vagrant 1.2 OS detection, skip checking for *nix OS
+        return false unless (command =~ /^uname|^cat \/etc|^cat \/proc|grep 'Fedora/).nil?
+        execute(command) == 0
       end
-      
+
       def upload(from, to)
         @logger.debug("Uploading: #{from} to #{to}")
-        
         file = "winrm-upload-#{rand()}"
         file_name = (session.cmd("echo %TEMP%\\#{file}"))[:data][0][:stdout].chomp
         session.powershell <<-EOH
@@ -113,103 +68,53 @@ module VagrantWindows
           }
         EOH
         Base64.encode64(IO.binread(from)).gsub("\n",'').chars.to_a.each_slice(8000-file_name.size) do |chunk|
-          out = session.cmd( "echo #{chunk.join} >> \"#{file_name}\"" )
+          out = session.cmd("echo #{chunk.join} >> \"#{file_name}\"")
         end
-        execute "mkdir $([System.IO.Path]::GetDirectoryName(\"#{to}\"))"
-        execute <<-EOH
+        session.powershell("mkdir $([System.IO.Path]::GetDirectoryName(\"#{to}\"))")
+        session.powershell <<-EOH
           $base64_string = Get-Content \"#{file_name}\"
           $bytes  = [System.Convert]::FromBase64String($base64_string) 
           $new_file = [System.IO.Path]::GetFullPath(\"#{to}\")
           [System.IO.File]::WriteAllBytes($new_file,$bytes)
         EOH
       end
-
-      def new_session
-        opts = endpoint_options()
-        logger.debug("Creating WinRM session to #{endpoint} with options: #{opts}")
-
-        client = ::WinRM::WinRMWebService.new(endpoint, :plaintext, opts)
-        client.set_timeout(opts[:operation_timeout])
-        client.toggle_nori_type_casting(:off) #we don't want coersion of types
-        client
+      
+      def download(from, to=nil)
+        @logger.warn("Downloading: #{from} to #{to} not supported on Windows guests")
       end
-
+      
+      # Runs a remote WQL query against the VM
+      #
+      # Note: This is not part of the standard Vagrant communicator interface, but
+      # guest capabilities may need to use this.
+      def wql(query)
+        session.wql(query)
+      end
+      
+      def set_winrmshell(winrmshell)
+        @session = winrmshell
+      end
+      
       def session
         @session ||= new_session
       end
-
+      alias_method :winrmshell, :session
+      
+      
       protected
-
-      def endpoint_options
-        {
-          :user => @machine.config.winrm.username,
-          :pass => @machine.config.winrm.password,
-          :host => @machine.config.winrm.host,
-          :port => winrm_port(),
-          :operation_timeout => @machine.config.winrm.timeout,
-          :basic_auth_only => true
-        }.merge ({})
+      
+      def new_session
+        WinRMShell.new(
+          @winrm_finder.winrm_host_address(),
+          @machine.config.winrm.username,
+          @machine.config.winrm.password,
+          {
+            :port => @winrm_finder.winrm_host_port(),
+            :timeout_in_seconds => @machine.config.winrm.timeout,
+            :max_tries => @machine.config.winrm.max_tries
+          })
       end
       
-      def winrm_port
-        @winrm_port ||= find_winrm_host_port()
-      end
-      
-      def find_winrm_host_port
-        expected_guest_port = @machine.config.winrm.guest_port
-        @logger.debug("Searching for WinRM port: #{expected_guest_port.inspect}")
-      
-        # Look for the forwarded port only by comparing the guest port
-        @machine.provider.driver.read_forwarded_ports.each do |_, _, hostport, guestport|
-          return hostport if guestport == expected_guest_port
-        end
-        
-        @machine.config.winrm.port
-      end
-
-      def endpoint
-        if !@winrm_endpoint
-          opts = endpoint_options()
-          @winrm_endpoint = "http://#{opts[:host]}:#{opts[:port]}/wsman"
-        end
-        @winrm_endpoint
-      end    
-
-      # Executes the command on an SSH connection within a login shell.
-      def shell_execute(command, shell=:powershell, &block)
-        @logger.debug("#{shell} executing:\n#{command}")
-        
-        if shell.eql? :cmd
-          output = session.cmd(command) do |out, err|
-            handle_out(:stdout, out, &block)
-            handle_out(:stderr, err, &block)
-          end
-        elsif shell.eql? :powershell
-          output = session.powershell(command) do |out, err|
-            handle_out(:stdout, out, &block)
-            handle_out(:stderr, err, &block)
-          end
-        else
-          raise Errors::WinRMInvalidShell, :shell => shell
-        end
-
-        exit_status = output[:exitcode]
-        @logger.debug("Exit status: #{exit_status.inspect}")
-
-        # Return the final exit status
-        return exit_status
-      end
-      
-      def handle_out(type, data, &block)
-        if block_given? && data
-          if data =~ /\n/
-            data.split(/\n/).each { |d| block.call(type, d) }
-          else
-            block.call(type, data)
-          end
-        end
-      end
-
     end #WinRM class
   end
 end

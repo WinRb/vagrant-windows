@@ -10,35 +10,28 @@ if Vagrant::VERSION < "1.1.0"
   raise "The Vagrant Windows plugin is only compatible with Vagrant 1.1+"
 end
 
-# Add vagrant-windows plugin errors
-require "vagrant-windows/errors"
+if Vagrant::VERSION >= "1.2.0"
+  # Monkey Patch the virtualbox share_folders action to make valid share names on windows
+  require_relative "monkey_patches/plugins/providers/virtualbox/action/share_folders"
+end
 
-# Add Vagrant WinRM communication channel
-require "vagrant-windows/communication/winrmcommunicator"
-
-# Monkey patch the vbox42 driver 
-require "vagrant-windows/monkey_patches/vbox_42_driver"
+# Monkey patch the vbox42 driver to support read mac addresses
+require_relative "monkey_patches/plugins/providers/virtualbox/driver/version_4_2"
 
 # Monkey Patch the VM object to support multiple channels, i.e. WinRM
-require "vagrant-windows/monkey_patches/machine"
+require_relative "monkey_patches/lib/vagrant/machine"
 
-# Monkey patch the Puppet provisioner to support PowerShell/Windows
-require "vagrant-windows/monkey_patches/puppet"
+# Monkey patch the Puppet provisioners to support PowerShell/Windows
+require_relative "monkey_patches/plugins/provisioners/puppet/provisioner/puppet"
+require_relative "monkey_patches/plugins/provisioners/puppet/provisioner/puppet_server"
 
-# Monkey patch the Chef-Solo provisioner to support PowerShell/Windows
-require "vagrant-windows/monkey_patches/chef_solo"
+# Monkey patch the Chef provisioners to support PowerShell/Windows
+require_relative "monkey_patches/plugins/provisioners/chef/provisioner/chef_solo"
+require_relative "monkey_patches/plugins/provisioners/chef/provisioner/chef_client"
 
 # Monkey patch the shell provisioner to support PowerShell/batch/exe/Windows/etc
-require "vagrant-windows/monkey_patches/provisioner"
+require_relative "monkey_patches/plugins/provisioners/shell/provisioner"
 
-# Add our windows specific config object
-require "vagrant-windows/config/windows"
-
-# Add our winrm specific config object
-require "vagrant-windows/config/winrm"
-
-# Add the new Vagrant Windows guest
-require "vagrant-windows/guest/windows"
 
 module VagrantWindows
   class Plugin < Vagrant.plugin("2")
@@ -47,19 +40,53 @@ module VagrantWindows
     This plugin installs a provider that allows Vagrant to manage
     Windows machines as guests.
     DESC
-    
-    guest(:windows) do
-      VagrantWindows::Guest::Windows
-    end
-    
+
     config(:windows) do
+      require_relative "config/windows"
       VagrantWindows::Config::Windows
     end
-      
+
     config(:winrm) do
+      require_relative "config/winrm"
       VagrantWindows::Config::WinRM
     end
+
+    guest(:windows) do
+      require_relative "guest/windows"
+      VagrantWindows::Guest::Windows
+    end
+
+    # Vagrant 1.2 introduced the concept of capabilities instead of implementing
+    # an interface on the guest.
+    if Vagrant::VERSION >= "1.2.0"
+
+      guest_capability(:windows, :change_host_name) do
+        require_relative "guest/cap/change_host_name"
+        VagrantWindows::Guest::Cap::ChangeHostName
+      end
+
+      guest_capability(:windows, :configure_networks) do
+        require_relative "guest/cap/configure_networks"
+        VagrantWindows::Guest::Cap::ConfigureNetworks
+      end
+
+      guest_capability(:windows, :halt) do
+        require_relative "guest/cap/halt"
+        VagrantWindows::Guest::Cap::Halt
+      end
+
+      guest_capability(:windows, :mount_virtualbox_shared_folder) do
+        require_relative "guest/cap/mount_virtualbox_shared_folder"
+        VagrantWindows::Guest::Cap::MountVirtualBoxSharedFolder
+      end
+
+      guest_capability(:windows, :mount_vmware_shared_folder) do
+        require_relative "guest/cap/mount_vmware_shared_folder"
+        VagrantWindows::Guest::Cap::MountVMwareSharedFolder
+      end
     
+    end
+
     # This initializes the internationalization strings.
     def self.setup_i18n
       I18n.load_path << File.expand_path("locales/en.yml", VagrantWindows.vagrant_windows_root)

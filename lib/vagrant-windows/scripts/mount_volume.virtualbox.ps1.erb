@@ -6,7 +6,7 @@ function Test-ReparsePoint([string]$path) {
 
 
 $MountPoint = [System.IO.Path]::GetFullPath("<%= options[:mount_point] %>")
-$ShareName = "<%= options[:name] %>"
+$ShareName = "<%= options[:share_name] %>"
 
 # https://github.com/BIAINC/vagrant-windows/issues/4
 # Not sure why this works, but it does.
