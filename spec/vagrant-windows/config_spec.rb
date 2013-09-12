@@ -23,10 +23,33 @@ describe VagrantWindows::Config::Windows , :unit => true do
       end
     end
   end
+
+  describe '.validate' do
+
+    let(:machine) do 
+      machine = mock(Vagrant::Machine) 
+      machine.stub!(:config).and_return do
+        windows = VagrantWindows::Config::Windows.new
+        windows.hault_timeout = ''
+        windows.hault_check_interval = ''
+        windows.set_work_network = ''
+        OpenStruct.new(:windows => windows )
+      end
+      machine
+    end
+
+    context 'without errors' do
+      it { instance.validate(machine).should == {"Windows Guest" => []} }
+    end
+     # TODO: Add checking for objects with errors
+
+  end
 end
 
 
-describe VagrantWindows::Config::WinRM do
+
+
+describe VagrantWindows::Config::WinRM ,:unit => true do
   let(:instance) { described_class.new }
 
   describe "defaults" do
