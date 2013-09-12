@@ -49,8 +49,8 @@ Gem::Specification.new do |gem|
   gem.add_runtime_dependency "winrm", "~> 1.1.1"
 
   gem.add_development_dependency "rake"
-  gem.add_development_dependency "rspec-core", "~> 2.12.2"
-  gem.add_development_dependency "rspec-expectations", "~> 2.12.1"
-  gem.add_development_dependency "rspec-mocks", "~> 2.12.1"
+  gem.add_development_dependency "rspec-core", "~> 2.14"
+  gem.add_development_dependency "rspec-expectations", "~> 2.14"
+  gem.add_development_dependency "rspec-mocks", "~> 2.14"
   gem.add_development_dependency "simplecov"
 end
