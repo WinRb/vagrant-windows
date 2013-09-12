@@ -1,11 +1,8 @@
 Installing Vagrant-Windows
 ==========================
 
-- Vagrant 1.0 should use <code>gem "vagrant-windows", "~> 0.1.2"</code>
-- Vagrant 1.1 should use <code>gem "vagrant-windows", "~> 1.0.0"</code>
-- Vagrant 1.2 is not yet supported. There needs to be a refactor to support capabilities. We are looking for a backwards compatiable way to implement this.
-
-To install you need to execute `vagrant plugin install vagrant-windows`. For Vagrant 1.0 execute `vagrant plugin install vagrant-windows --plugin-version 0.1.2`.
+For Vagrant 1.1.x and 1.2.x execute `vagrant plugin install vagrant-windows`.
+For Vagrant 1.0.x execute `vagrant plugin install vagrant-windows --plugin-version 0.1.2`.
 
 ### Installing Vagrant-Windows From Source
 If you want to install from source, use the following method (this would be for 1.2.0):
@@ -17,7 +14,6 @@ If you want to install from source, use the following method (this would be for 
 ```
 
 Keep in mind you should have Ruby 1.9.3 and Ruby DevKit installed. Check out the following gist that can get you what you need (from blank system to fully ready): [Install Vagrant Windows Plugin From Source Gist](https://gist.github.com/ferventcoder/6251225).
-
 
 Supported Guest Operating Systems (Your VM)
 ===========================================
@@ -70,9 +66,10 @@ If you want to run the winrm commands from PowerShell you need to put ```@{MaxMe
 
   - Optional: Start WinRM a few minutes faster by running: "sc config WinRM start= auto" (default is delayed-auto)
     - _Note:_ When you use the `winrm` command line tool it will always ask to set the startup to Delayed, so you may find yourself performing this a few times.
+
   
-Servers
---------
+Windows 2008/2012 Servers (except Core)
+---------------------------------------
   - [Disable Shutdown Tracker](http://www.jppinto.com/2010/01/how-to-disable-the-shutdown-event-tracker-in-server-20032008/)
   - [Disable "Server Manager" Starting at login](http://www.elmajdal.net/win2k8/How_to_Turn_Off_The_Automatic_Display_of_Server_Manager_At_logon.aspx)
   
@@ -83,7 +80,7 @@ Add the following to your Vagrantfile
 
 ```ruby
 config.vm.guest = :windows
-config.windows.halt_timeout = 15
+config.windows.halt_timeout = 25
 config.winrm.username = "vagrant"
 config.winrm.password = "vagrant"
 config.vm.network :forwarded_port, guest: 5985, host: 5985
@@ -94,7 +91,7 @@ Example:
 Vagrant.configure("2") do |config|
   
   # Max time to wait for the guest to shutdown
-  config.windows.halt_timeout = 15
+  config.windows.halt_timeout = 25
   
   # Admin user name and password
   config.winrm.username = "vagrant"
@@ -116,12 +113,13 @@ Available Config Parameters:
 
 * ```config.windows.halt_timeout``` - How long Vagrant should wait for the guest to shutdown before forcing exit, defaults to 30 seconds
 * ```config.windows.halt_check_interval``` - How often Vagrant should check if the system has shutdown, defaults to 1 second
+* ```config.windows.set_work_network``` - Force network adapters to "Work Network". Useful for Win7 guests using private networking.
 * ```config.winrm.username``` - The Windows guest admin user name, defaults to vagrant.
 * ```config.winrm.password``` - The above's password, defaults to vagrant.
 * ```config.winrm.host``` - The IP of the guest, but because we use NAT with port forwarding this defaults to localhost.
 * ```config.winrm.guest_port``` - The guest's WinRM port, defaults to 5985.
 * ```config.winrm.port``` - The WinRM port on the host, defaults to 5985. You might need to change this if your hosts is also Windows.
-* ```config.winrm.max_tries``` - The number of retries to connect to WinRM, defaults to 12.
+* ```config.winrm.max_tries``` - The number of retries to connect to WinRM, defaults to 20.
 * ```config.winrm.timeout``` - The max number of seconds to wait for a WinRM response, defaults to 1800 seconds.
 
 Note - You need to ensure you specify a config.windows and a config.winrm in your Vagrantfile. Currently there's a problem where
@@ -138,8 +136,7 @@ What Works?
 TODOs
 =========
 1. Test it! We need to test on more hosts, guests, and VBox versions. Help wanted.
-2. Vagrant 1.2 support. Unfortunately it appears there are some breaking changes with guests between Vagrant 1.1. and 1.2.
-3. Chef-Client support.
+2. Chef-Client support.
 3. Unit tests. 
 4. Better docs.
 
@@ -181,7 +178,7 @@ Contributing
 4. Push to the branch (git push origin my_feature_branch)
 5. Create a pull requst from your branch into master (Please be sure to provide enough detail for us to cipher what this change is doing)
 
-Running tests
+Development
 =============
 Clone this repository and use [Bundler](http://gembundler.com) to get the dependencies:
 
@@ -192,15 +189,32 @@ $ bundle install
 Once you have the dependencies, you can run the tests with `rake`:
 
 ```
-$ rake spec
+$ bundle exec rake spec
 ```
+
+If those pass, you're ready to start developing the plugin. You can test
+the plugin without installing it into your Vagrant environment by just
+creating a [Vagrantfile](http://docs.vagrantup.com/v2/plugins/packaging.html)
+in the top level of this directory (it is gitignored) that uses it, and
+use bundler to execute Vagrant:
+
+```
+$ bundle exec vagrant up
+```
+
 
 References and Shout Outs
 =========================
 - Chris McClimans - Vagrant Branch (https://github.com/hh/vagrant/blob/feature/winrm/)
 - Dan Wanek - WinRM GEM (https://github.com/zenchild/WinRM)
   - +1 For being super responsive to pull requests.
-
+- Mike Griffen - Added first vagrant-windows unit tests and updated readme
+- Geronimo Orozco - Shell provisioner support
+- David Cournapeau - Added config.windows.set_work_network option
+- keiths-osc - Fixed Vagrant 1.2 shared folder action
+- Rob Reynolds - Updated readme installation and box configuration notes
+- stonith - Updated readme winrm config notes
+- wenns - Updated readme to advise against forwarding RDP
 
 Changelog
 =========
@@ -227,8 +241,12 @@ Changelog
 
 1.0.3 
 
-- Added vagrant shell provisioner. 
-          The built-in shell provisioner tried to chmod the target script which doesn't make sense on windows.
-
+- Added vagrant shell provisioner. The built-in shell provisioner tried to chmod the target script which doesn't make sense on windows.
 - Can now run the vagrant-windows plugin via bundle exec instead of vagrant plugin install (for plugin dev).The vagrant src root finding logic didn't work from a bundle, but the native Vagrant src root does.
 - Readme fixes/updates.
+
+1.2.0
+
+- Converted to Vagrant 1.2.x plugin architecture.
+- Various networking fixes.
+- Chef provisioner runs through the Windows task scheduler instead of ps_runas power shell script.

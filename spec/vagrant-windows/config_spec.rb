@@ -1,7 +1,6 @@
-require "vagrant-windows/config/windows"
-require "vagrant-windows/config/winrm"
+require 'spec_helper'
 
-describe VagrantWindows::Config::Windows do
+describe VagrantWindows::Config::Windows , :unit => true do
   let(:instance) { described_class.new }
 
   describe "defaults" do
@@ -42,7 +41,7 @@ describe VagrantWindows::Config::WinRM do
     its("host")       { should == "localhost" }
     its("port")       { should == 5985 }
     its("guest_port") { should == 5985 }
-    its("max_tries")  { should == 12 }
+    its("max_tries")  { should == 20 }
     its("timeout")    { should == 1800 }
   end
 

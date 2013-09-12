@@ -1,3 +1,6 @@
+require_relative '../../../helper'
+require_relative '../../../communication/winrmcommunicator'
+
 module Vagrant
   class Machine
     
@@ -21,5 +24,9 @@ module Vagrant
       @winrm ||= WinRM.new(self)
     end
 
+    def is_windows?
+      return @config.vm.guest.eql? :windows
+    end
+    
   end
 end
