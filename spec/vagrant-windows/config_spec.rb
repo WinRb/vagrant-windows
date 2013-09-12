@@ -77,4 +77,29 @@ describe VagrantWindows::Config::WinRM ,:unit => true do
       end
     end
   end
+
+  describe '.validate' do
+
+    let(:machine) do 
+      machine = mock(Vagrant::Machine) 
+      machine.stub!(:config).and_return do
+        winrm = VagrantWindows::Config::Windows.new
+        winrm.password = ''
+        winrm.host = ''
+        winrm.port = ''
+        winrm.guest_port = ''
+        winrm.max_tries = ''
+        winrm.timeout = ''
+        OpenStruct.new(:winrm => winrm )
+      end
+      machine
+    end
+
+    context 'without errors' do
+      it { instance.validate(machine).should == {"WinRM" => []} }
+    end
+     # TODO: Add checking for objects with errors
+
+  end
 end
+
