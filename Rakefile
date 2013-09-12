@@ -9,7 +9,10 @@ Dir.chdir(File.expand_path("../", __FILE__))
 require "bundler/gem_tasks"
 
 # Install the `spec` task so that we can run tests.
-RSpec::Core::RakeTask.new
+RSpec::Core::RakeTask.new do |task|
+    task.pattern = "spec/**/*_spec.rb"
+    task.rspec_opts = [ '--color', '-f documentation' ]
+end
 
-# Default task is to build the gem
-task :default => "build"
+# Default task is to run tests
+task :default => "spec"

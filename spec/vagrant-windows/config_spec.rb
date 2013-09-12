@@ -1,5 +1,4 @@
-require "vagrant-windows/config/windows"
-require "vagrant-windows/config/winrm"
+require 'spec_helper'
 
 describe VagrantWindows::Config::Windows do
   let(:instance) { described_class.new }

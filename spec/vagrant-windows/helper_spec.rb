@@ -1,4 +1,4 @@
-require "vagrant-windows/helper"
+require 'spec_helper'
 
 describe VagrantWindows::Helper do
   

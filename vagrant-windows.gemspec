@@ -52,4 +52,5 @@ Gem::Specification.new do |gem|
   gem.add_development_dependency "rspec-core", "~> 2.12.2"
   gem.add_development_dependency "rspec-expectations", "~> 2.12.1"
   gem.add_development_dependency "rspec-mocks", "~> 2.12.1"
+  gem.add_development_dependency "simplecov"
 end

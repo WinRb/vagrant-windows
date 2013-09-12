@@ -1,5 +1,4 @@
-require "vagrant-windows/communication/guestnetwork"
-require "vagrant-windows/communication/winrmshell"
+require 'spec_helper'
 
 describe VagrantWindows::Communication::GuestNetwork do
   
