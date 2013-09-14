@@ -2,6 +2,7 @@ require 'log4r'
 require_relative '../../communication/guestnetwork'
 require_relative '../../communication/winrmshell'
 require_relative '../../errors'
+require_relative '../../helper'
 
 module VagrantWindows
   module Guest
@@ -14,8 +15,7 @@ module VagrantWindows
           @@logger.debug("networks: #{networks.inspect}")
           
           guest_network = ::VagrantWindows::Communication::GuestNetwork.new(machine.communicate.winrmshell)
-
-          if (machine.provider_name != :vmware_fusion) && (machine.provider_name != :vmware_workstation)
+          unless VagrantWindows::Helper.is_vmware(machine) 
             vm_interface_map = create_vm_interface_map(machine, guest_network)
           end
           
