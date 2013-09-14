@@ -1,9 +1,9 @@
 require "vagrant"
+require "vagrant-windows/helper"
 require "vagrant-windows/guest/cap/change_host_name"
 require "vagrant-windows/guest/cap/configure_networks"
 require "vagrant-windows/guest/cap/halt"
-require "vagrant-windows/guest/cap/mount_virtualbox_shared_folder"
-require "vagrant-windows/guest/cap/mount_vmware_shared_folder"
+require "vagrant-windows/guest/cap/mount_shared_folder"
 
 module VagrantWindows
   module Guest
@@ -31,14 +31,14 @@ module VagrantWindows
         VagrantWindows::Guest::Cap::Halt.halt(@machine)
       end
       
-      def mount_virtualbox_shared_folder(name, guestpath, options)
-        VagrantWindows::Guest::Cap::MountVirtualBoxSharedFolder.mount_virtualbox_shared_folder(
-          @machine, name, guestpath, options)
-      end
-
-      def mount_vmware_shared_folder(name, guestpath, options)
-        VagrantWindows::Guest::Cap::MountVMwareBoxSharedFolder.mount_vmware_shared_folder(
+      def mount_shared_folder(name, guestpath, options)
+        if VagrantWindows::Helper.is_vmware(@machine) then
+          VagrantWindows::Guest::Cap::MountSharedFolder.mount_vmware_shared_folder(
             @machine, name, guestpath, options)
+        else
+          VagrantWindows::Guest::Cap::MountSharedFolder.mount_virtualbox_shared_folder(
+            @machine, name, guestpath, options)
+        end
       end
       
       def configure_networks(networks)
