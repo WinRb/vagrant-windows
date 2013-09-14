@@ -1,5 +1,7 @@
 # Vagrant-Windows
 [![Build Status](https://travis-ci.org/WinRb/vagrant-windows.png)](https://travis-ci.org/WinRb/vagrant-windows)
+[![Code Climate](https://codeclimate.com/github/WinRb/vagrant-windows.png)](https://codeclimate.com/WinRb/vagrant-windows)
+[![Gem Version](https://badge.fury.io/rb/vagrant-windows.png)](http://badge.fury.io/rb/vagrant-windows)
 
 Use Windows guests with Vagrant
 
