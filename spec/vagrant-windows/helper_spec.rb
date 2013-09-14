@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'mocha/api'
 
 describe VagrantWindows::Helper , :unit => true do
   
@@ -31,6 +32,24 @@ describe VagrantWindows::Helper , :unit => true do
     
     it "should use last folder name in guest_path" do
       @dummy.win_friendly_share_id('/tmp/folder/sharename').should eq('tmp_folder_sharename')
+    end
+
+  end
+  
+  describe "is_vmware" do
+    it "should be true for vmware_fusion" do
+      machine = stub(:provider_name => :vmware_fusion)
+      expect(@dummy.is_vmware(machine)).to be_true
+    end
+    
+    it "should be true for vmware_workstation" do
+      machine = stub(:provider_name => :vmware_workstation)
+      expect(@dummy.is_vmware(machine)).to be_true
+    end
+    
+    it "should be false for virtual_box" do
+      machine = stub(:provider_name => :virtual_box)
+      expect(@dummy.is_vmware(machine)).to be_false
     end
 
   end
