@@ -7,6 +7,7 @@ function Test-ReparsePoint([string]$path) {
 
 $MountPoint = [System.IO.Path]::GetFullPath("<%= options[:mount_point] %>")
 $ShareName = "<%= options[:share_name] %>"
+$VmProviderUncPath = "<%= options[:vm_provider_unc_path] %>"
 
 # https://github.com/BIAINC/vagrant-windows/issues/4
 # Not sure why this works, but it does.
@@ -41,7 +42,7 @@ if (-not (Test-Path $BaseDirectory))
   New-Item $BaseDirectory -Type Directory -Force | Out-Null
 }
 
-cmd /c mklink /D "$MountPoint" "\\vboxsrv\$ShareName" | out-null
+cmd /c mklink /D "$MountPoint" "$VmProviderUncPath" | out-null
 
 if ( $LASTEXITCODE -ne 0 )
 {
