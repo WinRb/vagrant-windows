@@ -29,13 +29,13 @@ module VagrantWindows
             if network_type == :static
               guest_network.configure_static_interface(
                 interface[:index],
-                interface[:net_connection_id],
+                interface[:name],
                 network[:ip],
                 network[:netmask])
             elsif network_type == :dhcp
               guest_network.configure_dhcp_interface(
                 interface[:index],
-                interface[:net_connection_id])
+                interface[:name])
             else
               raise WindowsError, "#{network_type} network type is not supported, try static or dhcp"
             end
