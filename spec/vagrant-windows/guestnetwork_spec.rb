@@ -35,8 +35,20 @@ describe VagrantWindows::Communication::GuestNetwork , :integration => true do
     
     it "should configure static IP for adapter" do
       nics = @guestnetwork.network_adapters()
-      @guestnetwork.configure_static_interface(nics[1][:index], nics[1][:net_connection_id], "192.168.0.100", "255.255.255.0")
+      @guestnetwork.configure_static_interface(
+        nics[1][:index],
+        nics[1][:net_connection_id],
+        "192.168.0.121",
+        "255.255.255.0")
+        
       expect(@guestnetwork.is_dhcp_enabled(nics[1][:index])).to be_false
+      
+      # ensure the right IP was set by looking through all the output of ipconfig
+      ipconfig_out = ''
+      @shell.powershell('ipconfig /all') do |_, line|
+        ipconfig_out = ipconfig_out + "#{line}"
+      end
+      expect(ipconfig_out).to include('192.168.0.121')
     end
     
     it "should configure all networks to work mode" do
