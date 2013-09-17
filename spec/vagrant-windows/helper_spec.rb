@@ -35,23 +35,5 @@ describe VagrantWindows::Helper , :unit => true do
     end
 
   end
-  
-  describe "is_vmware" do
-    it "should be true for vmware_fusion" do
-      machine = stub(:provider_name => :vmware_fusion)
-      expect(@dummy.is_vmware(machine)).to be_true
-    end
-    
-    it "should be true for vmware_workstation" do
-      machine = stub(:provider_name => :vmware_workstation)
-      expect(@dummy.is_vmware(machine)).to be_true
-    end
-    
-    it "should be false for virtual_box" do
-      machine = stub(:provider_name => :virtual_box)
-      expect(@dummy.is_vmware(machine)).to be_false
-    end
-
-  end
 
 end

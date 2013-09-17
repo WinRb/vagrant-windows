@@ -3,6 +3,7 @@ require_relative '../../communication/guestnetwork'
 require_relative '../../communication/winrmshell'
 require_relative '../../errors'
 require_relative '../../helper'
+require_relative '../../windows_machine'
 
 module VagrantWindows
   module Guest
@@ -14,8 +15,9 @@ module VagrantWindows
         def self.configure_networks(machine, networks)
           @@logger.debug("networks: #{networks.inspect}")
           
-          guest_network = ::VagrantWindows::Communication::GuestNetwork.new(machine.communicate.winrmshell)
-          unless VagrantWindows::Helper.is_vmware(machine) 
+          windows_machine = VagrantWindows::WindowsMachine.new(machine)
+          guest_network = VagrantWindows::Communication::GuestNetwork.new(machine.communicate.winrmshell)
+          unless windows_machine.is_vmware() 
             vm_interface_map = create_vm_interface_map(machine, guest_network)
           end
           
