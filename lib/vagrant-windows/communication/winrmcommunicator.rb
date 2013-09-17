@@ -83,14 +83,6 @@ module VagrantWindows
         @logger.warn("Downloading: #{from} to #{to} not supported on Windows guests")
       end
       
-      # Runs a remote WQL query against the VM
-      #
-      # Note: This is not part of the standard Vagrant communicator interface, but
-      # guest capabilities may need to use this.
-      def wql(query)
-        winrmshell.wql(query)
-      end
-      
       def set_winrmshell(winrmshell)
         @winrmshell = winrmshell
       end
