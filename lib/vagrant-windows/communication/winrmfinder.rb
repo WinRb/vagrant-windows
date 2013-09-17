@@ -13,7 +13,11 @@ module VagrantWindows
         @logger = Log4r::Logger.new("vagrant_windows::communication::winrmfinder")
       end
 
-      def winrm_host_address
+      # Finds the address of the Windows machine.
+      # Raises a Vagrant::Errors::SSHNotReady if WinRM is not responding yet.
+      #
+      # @return [String] The IP of the Windows machine
+      def find_winrm_host_address
         # Get the SSH info for the machine, raise an exception if the
         # provider is saying that SSH is not ready.
         ssh_info = @machine.ssh_info
@@ -22,7 +26,10 @@ module VagrantWindows
         return ssh_info[:host]
       end
       
-      def winrm_host_port
+      # Finds the IP port of the Windows machine's WinRM service.
+      #
+      # @return [String] The port of the Windows machine's WinRM service
+      def find_winrm_host_port
         expected_guest_port = @machine.config.winrm.guest_port
         @logger.debug("Searching for WinRM port: #{expected_guest_port.inspect}")
 

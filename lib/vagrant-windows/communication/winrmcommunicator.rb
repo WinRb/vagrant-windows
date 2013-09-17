@@ -1,34 +1,34 @@
 require 'timeout'
 require 'log4r'
 require_relative '../errors'
+require_relative '../windows_machine'
 require_relative 'winrmshell'
-require_relative 'winrmfinder'
 
 module VagrantWindows
   module Communication
-    # Provides communication with the VM via WinRM.
+    # Provides communication channel for Vagrant commands via WinRM.
     class WinRMCommunicator < Vagrant.plugin("2", :communicator)
 
       attr_reader :logger
-      attr_reader :machine
       attr_reader :winrm_finder
+      attr_reader :windows_machine
       
       def self.match?(machine)
         machine.config.vm.guest.eql? :windows
       end
 
       def initialize(machine)
-        @machine = machine
+        @windows_machine = VagrantWindows::WindowsMachine.new(machine)
+        @winrm_finder = WinRMFinder.new(machine)
         @logger = Log4r::Logger.new("vagrant_windows::communication::winrmcommunicator")
         @logger.debug("initializing WinRMCommunicator")
-        @winrm_finder = WinRMFinder.new(machine)
       end
 
       def ready?
         logger.debug("Checking whether WinRM is ready...")
 
-        Timeout.timeout(@machine.config.winrm.timeout) do
-          session.powershell("hostname")
+        Timeout.timeout(@windows_machine.winrm_config.timeout) do
+          winrmshell.powershell("hostname")
         end
 
         logger.info("WinRM is ready!")
@@ -43,10 +43,10 @@ module VagrantWindows
       
       def execute(command, opts={}, &block)
         if opts[:shell].eql? :cmd
-          session.cmd(command, &block)[:exitcode]
+          winrmshell.cmd(command, &block)[:exitcode]
         else
           command = VagrantWindows.load_script("command_alias.ps1") << "\r\n" << command
-          session.powershell(command, &block)[:exitcode]
+          winrmshell.powershell(command, &block)[:exitcode]
         end
       end
       alias_method :sudo, :execute
@@ -60,18 +60,18 @@ module VagrantWindows
       def upload(from, to)
         @logger.debug("Uploading: #{from} to #{to}")
         file = "winrm-upload-#{rand()}"
-        file_name = (session.cmd("echo %TEMP%\\#{file}"))[:data][0][:stdout].chomp
-        session.powershell <<-EOH
+        file_name = (winrmshell.cmd("echo %TEMP%\\#{file}"))[:data][0][:stdout].chomp
+        winrmshell.powershell <<-EOH
           if(Test-Path #{to})
           {
             rm #{to}
           }
         EOH
         Base64.encode64(IO.binread(from)).gsub("\n",'').chars.to_a.each_slice(8000-file_name.size) do |chunk|
-          out = session.cmd("echo #{chunk.join} >> \"#{file_name}\"")
+          out = winrmshell.cmd("echo #{chunk.join} >> \"#{file_name}\"")
         end
-        session.powershell("mkdir $([System.IO.Path]::GetDirectoryName(\"#{to}\"))")
-        session.powershell <<-EOH
+        winrmshell.powershell("mkdir $([System.IO.Path]::GetDirectoryName(\"#{to}\"))")
+        winrmshell.powershell <<-EOH
           $base64_string = Get-Content \"#{file_name}\"
           $bytes  = [System.Convert]::FromBase64String($base64_string) 
           $new_file = [System.IO.Path]::GetFullPath(\"#{to}\")
@@ -88,30 +88,29 @@ module VagrantWindows
       # Note: This is not part of the standard Vagrant communicator interface, but
       # guest capabilities may need to use this.
       def wql(query)
-        session.wql(query)
+        winrmshell.wql(query)
       end
       
       def set_winrmshell(winrmshell)
-        @session = winrmshell
+        @winrmshell = winrmshell
       end
       
-      def session
-        @session ||= new_session
+      def winrmshell()
+        @winrmshell ||= new_winrmshell
       end
-      alias_method :winrmshell, :session
       
       
       protected
       
-      def new_session
+      def new_winrmshell()
         WinRMShell.new(
-          @winrm_finder.winrm_host_address(),
-          @machine.config.winrm.username,
-          @machine.config.winrm.password,
+          @winrm_finder.find_winrm_host_address(),
+          @windows_machine.winrm_config.username,
+          @windows_machine.winrm_config.password,
           {
-            :port => @winrm_finder.winrm_host_port(),
-            :timeout_in_seconds => @machine.config.winrm.timeout,
-            :max_tries => @machine.config.winrm.max_tries
+            :port => @winrm_finder.find_winrm_host_port(),
+            :timeout_in_seconds => @windows_machine.winrm_config.timeout,
+            :max_tries => @windows_machine.winrm_config.max_tries
           })
       end
       
