@@ -14,24 +14,24 @@ module VagrantWindows
       attr_reader :windows_machine
       
       def self.match?(machine)
-        machine.config.vm.guest.eql? :windows
+        VagrantWindows::WindowsMachine.is_windows?(machine)
       end
 
       def initialize(machine)
         @windows_machine = VagrantWindows::WindowsMachine.new(machine)
-        @winrm_finder = WinRMFinder.new(machine)
+        @winrm_finder = WinRMFinder.new(@windows_machine)
         @logger = Log4r::Logger.new("vagrant_windows::communication::winrmcommunicator")
         @logger.debug("initializing WinRMCommunicator")
       end
 
       def ready?
-        logger.debug("Checking whether WinRM is ready...")
+        @logger.debug("Checking whether WinRM is ready...")
 
         Timeout.timeout(@windows_machine.winrm_config.timeout) do
           winrmshell.powershell("hostname")
         end
 
-        logger.info("WinRM is ready!")
+        @logger.info("WinRM is ready!")
         return true
         
       rescue Vagrant::Errors::VagrantError => e

@@ -5,6 +5,14 @@ module VagrantWindows
     
     attr_reader :machine
     
+    # Returns true if the specifed Vagrant machine is a Windows guest, otherwise false.
+    #
+    # @param [Machine] The Vagrant machine object
+    # @return [Boolean]
+    def self.is_windows?(machine)
+      machine.config.vm.guest.eql? :windows
+    end
+    
     # @param [Machine] The Vagrant machine object
     def initialize(machine)
       @machine = machine
@@ -30,6 +38,21 @@ module VagrantWindows
     # @return [Hash]
     def read_mac_addresses()
       @machine.provider.driver.read_mac_addresses
+    end
+    
+    # Returns a list of forwarded ports for a VM.
+    # NOTE: For VMWare this is currently unsupported.
+    #
+    # @return [Array<Array>]
+    def read_forwarded_ports()
+      is_vmware() ? [] : @machine.provider.driver.read_forwarded_ports
+    end
+    
+    # Returns the SSH config for this machine.
+    #
+    # @return [Hash]
+    def ssh_info()
+      @machine.ssh_info
     end
     
     def windows_config()
