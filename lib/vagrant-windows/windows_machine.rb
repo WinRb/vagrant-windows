@@ -17,6 +17,21 @@ module VagrantWindows
       @machine.provider_name.to_s().start_with?('vmware')
     end
     
+    # Returns the active WinRMShell for the guest.
+    #
+    # @return [WinRMShell]
+    def winrmshell()
+      @machine.communicate.winrmshell
+    end
+
+    # Reads the machine's MAC addresses keyed by interface index.
+    # {1=>"0800273FAC5A", 2=>"08002757E68A"}
+    #
+    # @return [Hash]
+    def read_mac_addresses()
+      @machine.provider.driver.read_mac_addresses
+    end
+    
     def windows_config()
       @machine.config.windows
     end

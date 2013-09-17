@@ -16,9 +16,9 @@ module VagrantWindows
           @@logger.debug("networks: #{networks.inspect}")
           
           windows_machine = VagrantWindows::WindowsMachine.new(machine)
-          guest_network = VagrantWindows::Communication::GuestNetwork.new(machine.communicate.winrmshell)
+          guest_network = VagrantWindows::Communication::GuestNetwork.new(windows_machine.winrmshell)
           unless windows_machine.is_vmware() 
-            vm_interface_map = create_vm_interface_map(machine, guest_network)
+            vm_interface_map = create_vm_interface_map(windows_machine, guest_network)
           end
           
           networks.each do |network|
@@ -42,13 +42,13 @@ module VagrantWindows
               raise WindowsError, "#{network_type} network type is not supported, try static or dhcp"
             end
           end
-          guest_network.set_all_networks_to_work() if machine.config.windows.set_work_network
+          guest_network.set_all_networks_to_work() if windows_machine.windows_config.set_work_network
         end
         
         #{1=>{:name=>"Local Area Connection", :mac_address=>"0800275FAC5B", :interface_index=>"11", :index=>"7"}}
-        def self.create_vm_interface_map(machine, guest_network)
+        def self.create_vm_interface_map(windows_machine, guest_network)
           vm_interface_map = {}
-          driver_mac_address = machine.provider.driver.read_mac_addresses.invert
+          driver_mac_address = windows_machine.read_mac_addresses.invert
           @@logger.debug("mac addresses: #{driver_mac_address.inspect}")
           guest_network.network_adapters().each do |nic|
             @@logger.debug("nic: #{nic.inspect}")
