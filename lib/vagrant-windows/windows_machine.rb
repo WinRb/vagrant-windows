@@ -21,7 +21,7 @@ module VagrantWindows
     # Checks to see if the machine is using VMWare Fusion or Workstation.
     #
     # @return [Boolean]
-    def is_vmware()
+    def is_vmware?()
       @machine.provider_name.to_s().start_with?('vmware')
     end
     
@@ -45,7 +45,7 @@ module VagrantWindows
     #
     # @return [Array<Array>]
     def read_forwarded_ports()
-      is_vmware() ? [] : @machine.provider.driver.read_forwarded_ports
+      is_vmware?() ? [] : @machine.provider.driver.read_forwarded_ports
     end
     
     # Returns the SSH config for this machine.

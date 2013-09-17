@@ -17,7 +17,7 @@ module VagrantWindows
           
           windows_machine = VagrantWindows::WindowsMachine.new(machine)
           guest_network = VagrantWindows::Communication::GuestNetwork.new(windows_machine.winrmshell)
-          unless windows_machine.is_vmware() 
+          unless windows_machine.is_vmware?() 
             vm_interface_map = create_vm_interface_map(windows_machine, guest_network)
           end
           
