@@ -58,24 +58,7 @@ module VagrantWindows
 
       def upload(from, to)
         @logger.debug("Uploading: #{from} to #{to}")
-        file = "winrm-upload-#{rand()}"
-        file_name = (winrmshell.cmd("echo %TEMP%\\#{file}"))[:data][0][:stdout].chomp
-        winrmshell.powershell <<-EOH
-          if(Test-Path #{to})
-          {
-            rm #{to}
-          }
-        EOH
-        Base64.encode64(IO.binread(from)).gsub("\n",'').chars.to_a.each_slice(8000-file_name.size) do |chunk|
-          out = winrmshell.cmd("echo #{chunk.join} >> \"#{file_name}\"")
-        end
-        winrmshell.powershell("mkdir $([System.IO.Path]::GetDirectoryName(\"#{to}\"))")
-        winrmshell.powershell <<-EOH
-          $base64_string = Get-Content \"#{file_name}\"
-          $bytes  = [System.Convert]::FromBase64String($base64_string) 
-          $new_file = [System.IO.Path]::GetFullPath(\"#{to}\")
-          [System.IO.File]::WriteAllBytes($new_file,$bytes)
-        EOH
+        winrmshell.upload(from, to)
       end
       
       def download(from, to=nil)
