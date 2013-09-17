@@ -3,15 +3,13 @@ require 'log4r'
 require_relative '../errors'
 require_relative '../windows_machine'
 require_relative 'winrmshell'
+require_relative 'winrmshell_factory'
+require_relative 'winrmfinder'
 
 module VagrantWindows
   module Communication
     # Provides communication channel for Vagrant commands via WinRM.
     class WinRMCommunicator < Vagrant.plugin("2", :communicator)
-
-      attr_reader :logger
-      attr_reader :winrm_finder
-      attr_reader :windows_machine
       
       def self.match?(machine)
         VagrantWindows::WindowsMachine.is_windows?(machine)
@@ -19,7 +17,8 @@ module VagrantWindows
 
       def initialize(machine)
         @windows_machine = VagrantWindows::WindowsMachine.new(machine)
-        @winrm_finder = WinRMFinder.new(@windows_machine)
+        @winrm_shell_factory = WinRMShellFactory.new(@windows_machine, WinRMFinder.new(@windows_machine))
+        
         @logger = Log4r::Logger.new("vagrant_windows::communication::winrmcommunicator")
         @logger.debug("initializing WinRMCommunicator")
       end
@@ -83,27 +82,12 @@ module VagrantWindows
         @logger.warn("Downloading: #{from} to #{to} not supported on Windows guests")
       end
       
-      def set_winrmshell(winrmshell)
+      def winrmshell=(winrmshell)
         @winrmshell = winrmshell
       end
       
-      def winrmshell()
-        @winrmshell ||= new_winrmshell
-      end
-      
-      
-      protected
-      
-      def new_winrmshell()
-        WinRMShell.new(
-          @winrm_finder.find_winrm_host_address(),
-          @windows_machine.winrm_config.username,
-          @windows_machine.winrm_config.password,
-          {
-            :port => @winrm_finder.find_winrm_host_port(),
-            :timeout_in_seconds => @windows_machine.winrm_config.timeout,
-            :max_tries => @windows_machine.winrm_config.max_tries
-          })
+      def winrmshell
+        @winrmshell ||= @winrm_shell_factory.create_winrm_shell()
       end
       
     end #WinRM class

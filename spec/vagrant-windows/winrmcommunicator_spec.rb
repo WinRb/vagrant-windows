@@ -5,9 +5,8 @@ describe VagrantWindows::Communication::WinRMCommunicator, :integration => true 
   before(:all) do
     # This test requires you already have a running Windows Server 2008 R2 Vagrant VM
     # Not ideal, but you have to start somewhere
-    @shell = VagrantWindows::Communication::WinRMShell.new("localhost", "vagrant", "vagrant")
     @communicator = VagrantWindows::Communication::WinRMCommunicator.new({})
-    @communicator.set_winrmshell(@shell)
+    @communicator.winrmshell = VagrantWindows::Communication::WinRMShell.new("localhost", "vagrant", "vagrant")
   end
   
   describe "execute" do
