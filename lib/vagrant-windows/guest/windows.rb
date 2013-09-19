@@ -9,7 +9,7 @@ module VagrantWindows
   module Guest
     class Windows < Vagrant.plugin("2", :guest)
       
-      # Vagrant 1.1.x compatibibility methods
+      # Vagrant 1.1.x compatibility methods
       # Implement the 1.1.x methods and call through to the new 1.2.x capabilities
       
       attr_reader :machine
@@ -46,7 +46,7 @@ module VagrantWindows
       end
       
       
-      # Vagrant 1.2.x compatibibility methods
+      # Vagrant 1.2.x compatibility methods
       
       def detect?(machine)
         
