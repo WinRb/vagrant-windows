@@ -46,7 +46,7 @@ module VagrantWindows
       end
       
       
-      # Vagrant 1.2.x compatibibility methods
+      # Vagrant 1.2.x compatibility methods
       
       def detect?(machine)
         
