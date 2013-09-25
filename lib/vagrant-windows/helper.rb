@@ -15,11 +15,13 @@ module VagrantWindows
     end
 
     # Makes Vagrant share names Windows guest friendly.
-    # Turns '/vagrant' into 'vagrant' or turns ''/a/b/c/d/e' into 'a_b_c_d_e'
+    # Turns '/vagrant' into 'vagrant', '/a/b/c/d/e' into 'a_b_c_d_e', and 'v:' or 'v:/' into 'v'
     #
     # @return [String]
     def win_friendly_share_id(shared_folder_name)
-      return shared_folder_name.gsub(/[\/\/]/,'_').sub(/^_/, '')
+      # replace /, \, and all other reserved windows pathname characters with _; then, cleanup _ groups, and any leading or trailing _'s
+      # URLref: [MSDN - Naming Files, Paths, and Namespaces] http://msdn.microsoft.com/en-us/library/windows/desktop/aa365247(v=vs.85).aspx @@ http://archive.is/w9ddA @@ http://webcitation.org/6JK50Gyil
+      return shared_folder_name.gsub(/[\/\\<>:"|?*]/,'_').gsub(/__+/,'_').sub(/^_/,'').sub(/_$/,'')
     end
     
     # Checks to see if the specified machine is using VMWare Fusion or Workstation.
