@@ -43,6 +43,9 @@ module VagrantPlugins
           end
 
           command = "#{facter} puppet apply #{options}"
+          if config.working_directory
+            command = "cd #{config.working_directory}; if($?) \{ #{command} \}"
+          end
 
           @machine.env.ui.info I18n.t("vagrant.provisioners.puppet.running_puppet",
                                       :manifest => @manifest_file)
