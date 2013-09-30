@@ -42,7 +42,7 @@ module VagrantPlugins
             facter = "#{facts.join(" ")} "
           end
 
-          command = "cd #{manifests_guest_path}; if($?) \{ #{facter} puppet apply #{options} \}"
+          command = "#{facter} puppet apply #{options}"
 
           @machine.env.ui.info I18n.t("vagrant.provisioners.puppet.running_puppet",
                                       :manifest => @manifest_file)
@@ -59,7 +59,7 @@ module VagrantPlugins
           root_path = @machine.env.root_path
           @expanded_manifests_path = @config.expanded_manifests_path(root_path)
           @expanded_module_paths   = @config.expanded_module_paths(root_path)
-          @manifest_file           = @config.manifest_file
+          @manifest_file           = File.join(manifests_guest_path, @config.manifest_file)
 
           # Setup the module paths
           @module_paths = []
