@@ -28,6 +28,16 @@ module VagrantPlugins
             options << "--modulepath '#{module_paths.join(';')}'"
           end
 
+          if @hiera_config_path
+            options << "--hiera_config=#{@hiera_config_path}"
+          end
+
+          if !@machine.env.ui.is_a?(Vagrant::UI::Colored)
+            options << "--color=false"
+          end
+
+          options << "--manifestdir #{manifests_guest_path}"
+          options << "--detailed-exitcodes"
           options << @manifest_file
           options = options.join(" ")
 
