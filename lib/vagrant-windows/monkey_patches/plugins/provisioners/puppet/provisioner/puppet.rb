@@ -4,19 +4,19 @@ module VagrantPlugins
   module Puppet
     module Provisioner
       class Puppet < Vagrant.plugin("2", :provisioner)
-        
+
         # This patch is needed until Vagrant supports Puppet on Windows guests
         run_puppet_apply_on_linux = instance_method(:run_puppet_apply)
         configure_on_linux = instance_method(:configure)
-        
+
         define_method(:run_puppet_apply) do
           is_windows ? run_puppet_apply_on_windows() : run_puppet_apply_on_linux.bind(self).()
         end
-        
+
         define_method(:configure) do |root_config|
           is_windows ? configure_on_windows(root_config) : configure_on_linux.bind(self).(root_config)
         end
-        
+
         def run_puppet_apply_on_windows
           options = [config.options].flatten
           module_paths = @module_paths.map { |_, to| to }
@@ -28,6 +28,16 @@ module VagrantPlugins
             options << "--modulepath '#{module_paths.join(';')}'"
           end
 
+          if @hiera_config_path
+            options << "--hiera_config=#{@hiera_config_path}"
+          end
+
+          if !@machine.env.ui.is_a?(Vagrant::UI::Colored)
+            options << "--color=false"
+          end
+
+          options << "--manifestdir #{manifests_guest_path}"
+          options << "--detailed-exitcodes"
           options << @manifest_file
           options = options.join(" ")
 
@@ -41,9 +51,12 @@ module VagrantPlugins
 
             facter = "#{facts.join(" ")} "
           end
-          
-          command = "cd #{manifests_guest_path}; if($?) \{ #{facter} puppet apply #{options} \}"
-          
+
+          command = "#{facter} puppet apply #{options}"
+          if config.working_directory
+            command = "cd #{config.working_directory}; if($?) \{ #{command} \}"
+          end
+
           @machine.env.ui.info I18n.t("vagrant.provisioners.puppet.running_puppet",
                                       :manifest => @manifest_file)
 
@@ -53,13 +66,13 @@ module VagrantPlugins
             end
           end
         end
-        
+
         def configure_on_windows(root_config)
           # Calculate the paths we're going to use based on the environment
           root_path = @machine.env.root_path
           @expanded_manifests_path = @config.expanded_manifests_path(root_path)
           @expanded_module_paths   = @config.expanded_module_paths(root_path)
-          @manifest_file           = @config.manifest_file
+          @manifest_file           = File.join(manifests_guest_path, @config.manifest_file)
 
           # Setup the module paths
           @module_paths = []
@@ -70,7 +83,7 @@ module VagrantPlugins
           @logger.debug("Syncing folders from puppet configure")
           @logger.debug("manifests_guest_path = #{manifests_guest_path}")
           @logger.debug("expanded_manifests_path = #{@expanded_manifests_path}")
-          
+
           # Windows guest volume mounting fails without an "id" specified
           # This hacks around that problem and allows the PS mount script to work
           root_config.vm.synced_folder(
