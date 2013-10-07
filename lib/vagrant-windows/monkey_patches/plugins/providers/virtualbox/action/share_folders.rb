@@ -23,7 +23,8 @@ module VagrantPlugins
               hostpath = File.expand_path(data[:hostpath], @env[:root_path])
               hostpath = Vagrant::Util::Platform.cygwin_windows_path(hostpath)
 
-              folder_name = win_friendly_share_id(id.gsub(/[\/\/]/,'_').sub(/^_/, ''))
+              share_name = data[:share_name] ? data[:share_name] : id
+              folder_name = win_friendly_share_id(share_name)
 
               folders << {
                   :name => folder_name,

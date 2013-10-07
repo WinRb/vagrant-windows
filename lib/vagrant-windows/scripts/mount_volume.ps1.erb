@@ -1,50 +1,78 @@
 
+# NOTE: keep this script size small (no more than ~2500 characters [~3000-len(command_alias.ps1]; see https://github.com/WinRb/WinRM/issues/41)
+
 function Test-ReparsePoint([string]$path) {
-  $file = Get-Item $path -Force -ea 0
-  return [bool]($file.Attributes -band [IO.FileAttributes]::ReparsePoint)
+  $f = Get-Item $path -Force -ea 0
+  return [bool]($f.Attributes -band [IO.FileAttributes]::ReparsePoint)
 }
 
+$MP = [System.IO.Path]::GetFullPath("<%= options[:mount_point] %>\.")
+$SN = "<%= options[:share_name] %>"
+$VP = "<%= options[:share_vm_basepath] %>\<%= options[:share_name] %>"
 
-$MountPoint = [System.IO.Path]::GetFullPath("<%= options[:mount_point] %>")
-$ShareName = "<%= options[:share_name] %>"
-$VmProviderUncPath = "<%= options[:vm_provider_unc_path] %>"
+$MP_Drive = Split-Path -qualifier $MP
+$MP_Path = Split-Path -noqualifier $MP
 
-# https://github.com/BIAINC/vagrant-windows/issues/4
-# Not sure why this works, but it does.
+# XP/2003 (Win OS v5.x), no symlinks; Vista+ (Win OS v6+), has symlinks
+$OS_hasSymlinks = ([System.Environment]::OSVersion.Version.Major -gt 5)
 
-& net use $ShareName 2>&1 | Out-Null
+# determine MountPoint information
+$MP_Exists = Test-Path $MP
+$MP_IsSymlink = Test-ReparsePoint $MP
+$MP_IsNetworkDrive = -not (Test-Path "$MP_Drive\") -or ((New-Object System.IO.DriveInfo $MP_Drive).DriveType -eq "Network")
+$MP_IsRootPath = $MP_Path -eq '\'
 
-Write-Debug "Attempting to mount $ShareName to $MountPoint"
-if( (Test-Path "$MountPoint") -and (Test-ReparsePoint "$MountPoint") )
-{
-  Write-Debug "Junction already exists, so I will delete it"
-  # Powershell refuses to delete junctions, oh well use cmd
-  cmd /c rd "$MountPoint"
-
-  if ( $LASTEXITCODE -ne 0 )
+if($MP_IsRootPath -and -not $MP_IsNetworkDrive)
   {
-    Write-Error "Failed to delete symbolic link at $MountPoint"
-    exit 1
+  Write-Error "Mount point drive is not usable; must mount to a mappable network drive (when mounting to a root directory)" 
+  exit 1
+  }
+if(-not $OS_hasSymlinks -and (-not ($MP_IsRootPath -and $MP_IsNetworkDrive)))
+  {
+  Write-Error "VM OS does not have symlinks; must mount share to root folder of a viable network drive"
+  exit 1
   }
 
-} 
-elseif(Test-Path $MountPoint) 
+# fixes enigmatic mounting problem (see https://github.com/BIAINC/vagrant-windows/issues/4)
+net use $SN 2>&1 | Out-Null
+
+Write-Debug "Attempting to mount $SN to $MP"
+if($OS_hasSymlinks -and -not $MP_IsRootPath)
+  {
+  if($MP_Exists -and $MP_IsSymlink)
+    {
+    Write-Debug "Junction already exists, so delete it (using CMD, since Powershell can't handle symlinks correctly)"
+    cmd /c rd "$MP"
+    }
+  elseif($MP_Exists)
+    {
+    Write-Error "Mount point already exists and is not a symbolic link"
+    exit 4
+    }
+
+  $dir = [System.IO.Path]::GetDirectoryName($MP)
+
+  if(-not (Test-Path $dir))
+    {
+    Write-Debug "Creating parent directory for mount point ($dir)"
+    New-Item $dir -Type Directory -Force | Out-Null
+    }
+
+  cmd /c mklink /D "$MP" "$VP" | Out-Null
+  }
+else
+  {
+  if($MP_Exists)
+    {
+    net use $MP_Drive /DELETE 2>&1 | Out-Null
+    }
+  schtasks /DELETE /tn "VAGRANT-Mount-$SN" /f  2>&1 | Out-Null
+  schtasks /CREATE /tn "VAGRANT-Mount-$SN" /tr "cmd /c net use $MP_Drive $VP /PERSISTENT:YES" /ru System /sc ONSTART
+  schtasks /RUN /tn "VAGRANT-Mount-$SN"
+  }
+
+if($LASTEXITCODE -ne 0)
 {
-  Write-Debug "Mount point already exists and is not a symbolic link"
-  exit 1
-}
-
-$BaseDirectory = [System.IO.Path]::GetDirectoryName($MountPoint)
-
-if (-not (Test-Path $BaseDirectory))
-{
-  Write-Debug "Creating parent directory for mount point $BaseDirectory"
-  New-Item $BaseDirectory -Type Directory -Force | Out-Null
-}
-
-cmd /c mklink /D "$MountPoint" "$VmProviderUncPath" | out-null
-
-if ( $LASTEXITCODE -ne 0 )
-{
+  Write-Error "Unspecified error while mounting ($SN)"
   exit 1
 }
