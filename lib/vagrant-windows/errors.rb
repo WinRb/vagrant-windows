@@ -7,8 +7,8 @@ module VagrantWindows
       error_namespace("vagrant_windows.errors")
     end  
     
-    class WinRMPortNotDetected < VagrantWindowsError
-      error_key(:winrm_port_not_detected)
+    class WinRMNotReady < VagrantWindowsError
+      error_key(:winrm_not_ready)
     end
 
     class WinRMInvalidShell < VagrantWindowsError

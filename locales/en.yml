@@ -2,11 +2,8 @@ en:
   vagrant_windows:
 
     errors:
-      winrm_port_not_detected: |-
-        Vagrant could not detect the WinRM port.
-
-        Host port: %{port}
-        Guest port: %{guest_port}
+      winrm_not_ready: |-
+        The box is not ready for WinRM connections yet.
       winrm_invalid_shell: |-
         %{shell} is not a supported type of Windows shell.
       winrm_execution_error: |-
