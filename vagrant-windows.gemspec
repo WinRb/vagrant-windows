@@ -7,6 +7,7 @@ Gem::Specification.new do |gem|
   gem.description   = %q{Windows Guest Support for Vagrant}
   gem.summary       = %q{A small gem that adds windows guest support to vagrant, uses WinRM as the Communication Channel}
   gem.homepage      = ""
+  gem.license       = "APACHE2"
 
   # The following block of code determines the files that should be included
   # in the gem. It does this by reading all the files in the directory where
