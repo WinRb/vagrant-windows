@@ -15,11 +15,14 @@ module VagrantWindows
 
       def winrm_host_address
         # Get the SSH info for the machine, raise an exception if the
-        # provider is saying that SSH is not ready.
+        # provider is saying that the machine is not ready.
         ssh_info = @machine.ssh_info
-        raise Vagrant::Errors::SSHNotReady if ssh_info.nil?
-        @logger.info("WinRM host: #{ssh_info[:host]}")
-        return ssh_info[:host]
+        raise VagrantWindows::Errors::WinRMNotReady if ssh_info.nil?
+        
+        # if the configuration has a host value, that takes precedence
+        host = @machine.config.winrm.host || ssh_info[:host]
+        @logger.info("WinRM host: #{host}")
+        host
       end
       
       def winrm_host_port
