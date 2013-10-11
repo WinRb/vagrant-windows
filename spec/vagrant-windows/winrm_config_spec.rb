@@ -12,7 +12,7 @@ describe VagrantWindows::Config::WinRM, :unit => true do
 
     its("username")   { should == "vagrant" }
     its("password")   { should == "vagrant" }
-    its("host")       { should == "localhost" }
+    its("host")       { should == nil }
     its("port")       { should == 5985 }
     its("guest_port") { should == 5985 }
     its("max_tries")  { should == 20 }

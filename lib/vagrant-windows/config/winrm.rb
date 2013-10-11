@@ -27,7 +27,6 @@ module VagrantWindows
 
         errors << "winrm.username cannot be nil."   if machine.config.winrm.username.nil?
         errors << "winrm.password cannot be nil."   if machine.config.winrm.password.nil?
-        errors << "winrm.host cannot be nil."       if machine.config.winrm.host.nil?
         errors << "winrm.port cannot be nil."       if machine.config.winrm.port.nil?
         errors << "winrm.guest_port cannot be nil." if machine.config.winrm.guest_port.nil?
         errors << "winrm.max_tries cannot be nil."  if machine.config.winrm.max_tries.nil?
@@ -39,7 +38,7 @@ module VagrantWindows
       def finalize!
         @username = "vagrant" if @username == UNSET_VALUE
         @password = "vagrant" if @password == UNSET_VALUE
-        @host = "localhost"   if @host == UNSET_VALUE
+        @host = nil           if @host == UNSET_VALUE
         @port = 5985          if @port == UNSET_VALUE
         @guest_port = 5985    if @guest_port == UNSET_VALUE
         @max_tries = 20       if @max_tries == UNSET_VALUE
