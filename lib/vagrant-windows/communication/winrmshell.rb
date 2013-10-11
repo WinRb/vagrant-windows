@@ -60,26 +60,24 @@ module VagrantWindows
       protected
       
       def execute_shell(command, shell=:powershell, &block)
+        raise Errors::WinRMInvalidShell, :shell => shell unless shell == :cmd || shell == :powershell
+        begin
+          execute_shell_with_retry(command, shell, &block)
+        rescue => e
+          raise_winrm_exception(e, shell, command)
+        end
+      end
+      
+      def execute_shell_with_retry(command, shell, &block)
         retryable(:tries => @max_tries, :on => @@exceptions_to_retry_on, :sleep => 10) do
           @logger.debug("#{shell} executing:\n#{command}")
-          if shell.eql? :cmd
-            output = session.cmd(command) do |out, err|
-              block.call(:stdout, out) if block_given? && out
-              block.call(:stderr, err) if block_given? && err
-            end
-          elsif shell.eql? :powershell
-            output = session.powershell(command) do |out, err|
-              block.call(:stdout, out) if block_given? && out
-              block.call(:stderr, err) if block_given? && err
-            end
-          else
-            raise Errors::WinRMInvalidShell, :shell => shell
+          output = session.send(shell, command) do |out, err|
+            block.call(:stdout, out) if block_given? && out
+            block.call(:stderr, err) if block_given? && err
           end
           @logger.debug("Exit status: #{output[:exitcode].inspect}")
           return output
         end
-      rescue => e
-        handle_winrm_exception(e, shell, command)
       end
       
       def execute_wql(query)
@@ -90,10 +88,10 @@ module VagrantWindows
           return output
         end
       rescue => e
-        handle_winrm_exception(e, :wql, query)
+        raise_winrm_exception(e, :wql, query)
       end
       
-      def handle_winrm_exception(winrm_exception, shell, command)
+      def raise_winrm_exception(winrm_exception, shell, command)
         if winrm_exception.message.include?("401") # return a more specific auth error for 401 errors
           raise Errors::WinRMAuthorizationError,
             :user => @username,
