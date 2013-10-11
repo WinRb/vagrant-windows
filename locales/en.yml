@@ -4,9 +4,6 @@ en:
     errors:
       winrm_not_ready: |-
         The box is not ready for WinRM connections yet.
-
-        Host port: %{port}
-        Guest port: %{guest_port}
       winrm_invalid_shell: |-
         %{shell} is not a supported type of Windows shell.
       winrm_execution_error: |-
