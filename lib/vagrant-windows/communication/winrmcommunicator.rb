@@ -42,19 +42,29 @@ module VagrantWindows
       end
       
       def execute(command, opts={}, &block)
-        if opts[:shell].eql? :cmd
-          session.cmd(command, &block)[:exitcode]
-        else
-          command = VagrantWindows.load_script("command_alias.ps1") << "\r\n" << command
-          session.powershell(command, &block)[:exitcode]
+        opts = {
+          :error_check => true,
+          :error_class => VagrantWindows::Errors::WinRMExecutionError,
+          :error_key   => :winrm_execution_error,
+          :command     => command,
+          :shell       => :powershell
+        }.merge(opts || {})
+        exit_status = do_execute(command, opts[:shell], &block)
+        if opts[:error_check] && exit_status != 0
+          raise_execution_error(opts, exit_status)
         end
+        exit_status
       end
       alias_method :sudo, :execute
       
       def test(command, opts=nil)
+        @logger.debug("Testing: #{command}")
+        
         # HACK: to speed up Vagrant 1.2 OS detection, skip checking for *nix OS
         return false unless (command =~ /^uname|^cat \/etc|^cat \/proc|grep 'Fedora/).nil?
-        execute(command) == 0
+
+        opts = { :error_check => false }.merge(opts || {})
+        execute(command, opts) == 0
       end
 
       def upload(from, to)
@@ -102,6 +112,23 @@ module VagrantWindows
       
       
       protected
+      
+      def do_execute(command, shell, &block)
+        if shell.eql? :cmd
+          session.cmd(command, &block)[:exitcode]
+        else
+          command = VagrantWindows.load_script("command_alias.ps1") << "\r\n" << command
+          session.powershell(command, &block)[:exitcode]
+        end
+      end
+      
+      def raise_execution_error(opts, exit_code)
+        # The error classes expect the translation key to be _key, but that makes for an ugly
+        # configuration parameter, so we set it here from `error_key`
+        msg = "Command execution failed with an exit code of #{exit_code}"
+        error_opts = opts.merge(:_key => opts[:error_key], :message => msg)
+        raise opts[:error_class], error_opts
+      end
       
       def new_session
         WinRMShell.new(
