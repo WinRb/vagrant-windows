@@ -20,12 +20,12 @@ Use Windows guests with Vagrant
 
 Supported Guest Operating Systems:
 - Windows 7
-- Windows 2008
-- Windows 2008 R2
-- Windows 2012
 - Windows 8
+- Windows Server 2008
+- Windows Server 2008 R2
+- Windows Server 2012
 
-Windows Server 2003 and Windows XP are not supported.
+Windows Server 2003 and Windows XP are not supported by the maintainers of this project. Any issues regarding any unsupported guest OS will be closed. If you still insist on using XP or Server 2003, [this](http://stackoverflow.com/a/18593425/18475) may help.
 
 You'll need to create a new Vagrant base box. Create a new Windows VM in VirtualBox, configure some Windows settings (see below) then follow the [Vagrant packaging instructions](http://docs.vagrantup.com/v2/cli/package.html).
 

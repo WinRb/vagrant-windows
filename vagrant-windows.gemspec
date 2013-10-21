@@ -2,11 +2,13 @@
 require File.expand_path('../lib/vagrant-windows/version', __FILE__)
 
 Gem::Specification.new do |gem|
-  gem.authors       = ["Paul Morton"]
-  gem.email         = ["pmorton@biaprotect.com"]
+  gem.name          = "vagrant-windows"
+  gem.version       = VagrantWindows::VERSION
+  gem.authors       = ["Paul Morton", "Shawn Neal"]
+  gem.email         = ["pmorton@biaprotect.com", "sneal@sneal.net"]
   gem.description   = %q{Windows Guest Support for Vagrant}
   gem.summary       = %q{A small gem that adds windows guest support to vagrant, uses WinRM as the Communication Channel}
-  gem.homepage      = ""
+  gem.homepage      = "https://github.com/WinRb/vagrant-windows"
   gem.license       = "APACHE2"
 
   # The following block of code determines the files that should be included
@@ -43,9 +45,7 @@ Gem::Specification.new do |gem|
   gem.files         = unignored_files
   gem.executables   = gem.files.grep(%r{^bin/}).map{ |f| File.basename(f) }
   gem.test_files    = gem.files.grep(%r{^(test|spec|features)/})
-  gem.name          = "vagrant-windows"
   gem.require_paths = ["lib"]
-  gem.version       = VagrantWindows::VERSION
 
   gem.add_runtime_dependency "winrm", "~> 1.1.1"
 
