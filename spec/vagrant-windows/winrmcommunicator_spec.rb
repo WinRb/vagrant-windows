@@ -11,15 +11,17 @@ describe VagrantWindows::Communication::WinRMCommunicator, :integration => true 
   end
   
   describe "execute" do
-    it "should return 1" do
-      expect(@communicator.execute("exit 1")).to eq(1)
+    it "should return 1 when error_check is false" do
+      expect(@communicator.execute("exit 1", { :error_check => false })).to eq(1)
     end
     
-    it "should return 1 with block" do
-      exit_code = @communicator.sudo("exit 1", {}) do |type, line|
-        puts line
-      end
-      expect(exit_code).to eq(1)
+    it "should raise WinRMExecutionError when error_check is true" do
+      expect { @communicator.execute("exit 1") }.to raise_error(VagrantWindows::Errors::WinRMExecutionError)
+    end
+    
+    it "should raise specified error type when specified and error_check is true" do
+      opts = { :error_class => VagrantWindows::Errors::WinRMInvalidShell }
+      expect { @communicator.execute("exit 1", opts) }.to raise_error(VagrantWindows::Errors::WinRMInvalidShell)
     end
   end
 
