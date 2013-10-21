@@ -64,7 +64,12 @@ module VagrantWindows
         # grep 'Fedora release 1[678]' /etc/redhat-release
         
         # see if the Windows directory is present
-        machine.communicate.test("test -d $Env:SystemRoot")
+        if machine.communicate.test("test -d $Env:SystemRoot")
+          return true
+        end
+
+        # Cygwin sh.exe
+        machine.communicate.test("test -d $SYSTEMROOT")
       end
     end
   end
