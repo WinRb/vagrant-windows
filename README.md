@@ -13,7 +13,7 @@ Use Windows guests with Vagrant
 
 ## Installation
 
-- For Vagrant 1.1 and 1.2 execute `vagrant plugin install vagrant-windows`.
+- For Vagrant 1.1 and above execute `vagrant plugin install vagrant-windows`.
 - For Vagrant 1.0 execute `vagrant plugin install vagrant-windows --plugin-version 0.1.2`.
 
 ## Creating a Base Box
