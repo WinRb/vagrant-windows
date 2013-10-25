@@ -17,6 +17,11 @@ module VagrantPlugins
         end
         
         def run_chef_solo_on_windows
+          
+          # This re-establishes our symbolic links if they were created between now and a reboot
+          # Fixes issue #119
+          @machine.communicate.execute('& net use a-non-existant-share', :error_check => false)
+          
           # create cheftaskrun.ps1 that the scheduled task will invoke when run
           render_file_and_upload("cheftaskrun.ps1", chef_script_options[:chef_task_run_ps1], :options => chef_script_options)
 
