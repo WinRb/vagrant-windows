@@ -18,6 +18,10 @@ module VagrantPlugins
         end
 
         def run_puppet_apply_on_windows
+          
+          # This re-establishes our symbolic links if they were created between now and a reboot
+          @machine.communicate.execute('& net use a-non-existant-share', :error_check => false)
+          
           options = [config.options].flatten
           module_paths = @module_paths.map { |_, to| to }
           if !@module_paths.empty?
