@@ -41,7 +41,7 @@ module VagrantPlugins
               @machine.env.ui.info I18n.t("vagrant.provisioners.chef.running_solo_again")
             end
 
-            exit_status = @machine.communicate.execute(command) do |type, data|
+            exit_status = @machine.communicate.execute(command, :error_check => false) do |type, data|
               # Output the data with the proper color based on the stream.
               color = type == :stdout ? :green : :red
 
