@@ -9,6 +9,7 @@ module VagrantPlugins
         
         include VagrantWindows::Helper
 
+        provision_on_linux = instance_method(:provision)
         run_chef_solo_on_linux = instance_method(:run_chef_solo)
 
         # This patch is needed until Vagrant supports chef on Windows guests
@@ -16,8 +17,25 @@ module VagrantPlugins
           is_windows ? run_chef_solo_on_windows() : run_chef_solo_on_linux.bind(self).()
         end
         
+        define_method(:provision) do
+          wait_if_rebooting() if is_windows
+          provision_on_linux.bind(self).()
+        end
+        
+        def wait_if_rebooting
+          # Check to see if the guest is rebooting, if its rebooting then wait until its ready
+          @logger.info('Checking guest reboot status')
+          reboot_detect_script = VagrantWindows.load_script('reboot_detect.ps1')
+          exit_status = @machine.communicate.execute(reboot_detect_script, :error_check => false)
+          if exit_status != 0
+            begin
+              @logger.debug('Guest is rebooting, waiting 10 seconds...')
+              sleep(10)
+            end until @machine.communicate.ready?
+          end
+        end
+        
         def run_chef_solo_on_windows
-          
           # This re-establishes our symbolic links if they were created between now and a reboot
           # Fixes issue #119
           @machine.communicate.execute('& net use a-non-existant-share', :error_check => false)
