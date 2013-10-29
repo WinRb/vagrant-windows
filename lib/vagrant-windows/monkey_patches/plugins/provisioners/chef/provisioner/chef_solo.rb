@@ -35,11 +35,7 @@ module VagrantPlugins
           end
         end
         
-        def run_chef_solo_on_windows
-          # This re-establishes our symbolic links if they were created between now and a reboot
-          # Fixes issue #119
-          @machine.communicate.execute('& net use a-non-existant-share', :error_check => false)
-          
+        def run_chef_solo_on_windows          
           # create cheftaskrun.ps1 that the scheduled task will invoke when run
           render_file_and_upload("cheftaskrun.ps1", chef_script_options[:chef_task_run_ps1], :options => chef_script_options)
 
@@ -63,6 +59,10 @@ module VagrantPlugins
             else
               @machine.env.ui.info I18n.t("vagrant.provisioners.chef.running_solo_again")
             end
+            
+            # This re-establishes our symbolic links if they were created between now and a reboot
+            # Fixes issue #119
+            @machine.communicate.execute('& net use a-non-existant-share', :error_check => false)
 
             exit_status = @machine.communicate.execute(command, :error_check => false) do |type, data|
               # Output the data with the proper color based on the stream.
