@@ -22,10 +22,22 @@ namespace VagrantWindows {
 }
 
 if (ShuttingDown) {
-  Write-Host "Shutting Down"
   exit 1
 }
 else {
-  Write-Host "All good"
-  exit 0
+  # see if a reboot is scheduled in the future by trying to schedule a reboot
+  . shutdown.exe -f -r -t 60
+  
+  if ($LASTEXITCODE -eq 1190) {
+    # reboot is already pending
+    exit 2
+  }
+  
+  # Remove the pending reboot we just created above
+  if ($LASTEXITCODE -eq 0) {
+    . shutdown.exe -a
+  }
 }
+
+# no reboot in progress or scheduled
+exit 0

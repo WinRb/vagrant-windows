@@ -25,13 +25,10 @@ module VagrantPlugins
         def wait_if_rebooting
           # Check to see if the guest is rebooting, if its rebooting then wait until its ready
           @logger.info('Checking guest reboot status')
-          reboot_detect_script = VagrantWindows.load_script('reboot_detect.ps1')
-          exit_status = @machine.communicate.execute(reboot_detect_script, :error_check => false)
-          if exit_status != 0
-            begin
-              @logger.debug('Guest is rebooting, waiting 10 seconds...')
-              sleep(10)
-            end until @machine.communicate.ready?
+          
+          while is_rebooting?(machine) 
+            @logger.debug('Guest is rebooting, waiting 10 seconds...')
+            sleep(10)
           end
         end
         
@@ -117,7 +114,12 @@ module VagrantPlugins
             }
           end
           @chef_script_options
-        end        
+        end
+        
+        def is_rebooting?(machine)
+          reboot_detect_script = VagrantWindows.load_script('reboot_detect.ps1')
+          @machine.communicate.execute(reboot_detect_script, :error_check => false) != 0
+        end
         
         def is_windows
           @machine.config.vm.guest.eql? :windows
