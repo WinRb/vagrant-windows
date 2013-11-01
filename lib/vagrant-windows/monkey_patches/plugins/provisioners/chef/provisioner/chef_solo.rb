@@ -9,6 +9,7 @@ module VagrantPlugins
         
         include VagrantWindows::Helper
 
+        provision_on_linux = instance_method(:provision)
         run_chef_solo_on_linux = instance_method(:run_chef_solo)
 
         # This patch is needed until Vagrant supports chef on Windows guests
@@ -16,12 +17,22 @@ module VagrantPlugins
           is_windows ? run_chef_solo_on_windows() : run_chef_solo_on_linux.bind(self).()
         end
         
-        def run_chef_solo_on_windows
+        define_method(:provision) do
+          wait_if_rebooting() if is_windows
+          provision_on_linux.bind(self).()
+        end
+        
+        def wait_if_rebooting
+          # Check to see if the guest is rebooting, if its rebooting then wait until its ready
+          @logger.info('Checking guest reboot status')
           
-          # This re-establishes our symbolic links if they were created between now and a reboot
-          # Fixes issue #119
-          @machine.communicate.execute('& net use a-non-existant-share', :error_check => false)
-          
+          while is_rebooting?(machine) 
+            @logger.debug('Guest is rebooting, waiting 10 seconds...')
+            sleep(10)
+          end
+        end
+        
+        def run_chef_solo_on_windows          
           # create cheftaskrun.ps1 that the scheduled task will invoke when run
           render_file_and_upload("cheftaskrun.ps1", chef_script_options[:chef_task_run_ps1], :options => chef_script_options)
 
@@ -45,6 +56,10 @@ module VagrantPlugins
             else
               @machine.env.ui.info I18n.t("vagrant.provisioners.chef.running_solo_again")
             end
+            
+            # This re-establishes our symbolic links if they were created between now and a reboot
+            # Fixes issue #119
+            @machine.communicate.execute('& net use a-non-existant-share', :error_check => false)
 
             exit_status = @machine.communicate.execute(command, :error_check => false) do |type, data|
               # Output the data with the proper color based on the stream.
@@ -99,7 +114,12 @@ module VagrantPlugins
             }
           end
           @chef_script_options
-        end        
+        end
+        
+        def is_rebooting?(machine)
+          reboot_detect_script = VagrantWindows.load_script('reboot_detect.ps1')
+          @machine.communicate.execute(reboot_detect_script, :error_check => false) != 0
+        end
         
         def is_windows
           @machine.config.vm.guest.eql? :windows
