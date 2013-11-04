@@ -1,37 +1,36 @@
 require 'timeout'
 require 'log4r'
-require_relative '../errors'
+require_relative 'winrmshell_factory'
 require_relative 'winrmshell'
 require_relative 'winrmfinder'
+require_relative '../errors'
+require_relative '../windows_machine'
 
 module VagrantWindows
   module Communication
-    # Provides communication with the VM via WinRM.
+    # Provides communication channel for Vagrant commands via WinRM.
     class WinRMCommunicator < Vagrant.plugin("2", :communicator)
-
-      attr_reader :logger
-      attr_reader :machine
-      attr_reader :winrm_finder
       
       def self.match?(machine)
-        machine.config.vm.guest.eql? :windows
+        VagrantWindows::WindowsMachine.is_windows?(machine)
       end
 
       def initialize(machine)
-        @machine = machine
+        @windows_machine = VagrantWindows::WindowsMachine.new(machine)
+        @winrm_shell_factory = WinRMShellFactory.new(@windows_machine, WinRMFinder.new(@windows_machine))
+        
         @logger = Log4r::Logger.new("vagrant_windows::communication::winrmcommunicator")
         @logger.debug("initializing WinRMCommunicator")
-        @winrm_finder = WinRMFinder.new(machine)
       end
 
       def ready?
-        logger.debug("Checking whether WinRM is ready...")
+        @logger.debug("Checking whether WinRM is ready...")
 
-        Timeout.timeout(@machine.config.winrm.timeout) do
-          session.powershell("hostname")
+        Timeout.timeout(@windows_machine.winrm_config.timeout) do
+          winrmshell.powershell("hostname")
         end
 
-        logger.info("WinRM is ready!")
+        @logger.info("WinRM is ready!")
         return true
         
       rescue Vagrant::Errors::VagrantError => e
@@ -69,56 +68,30 @@ module VagrantWindows
 
       def upload(from, to)
         @logger.debug("Uploading: #{from} to #{to}")
-        file = "winrm-upload-#{rand()}"
-        file_name = (session.cmd("echo %TEMP%\\#{file}"))[:data][0][:stdout].chomp
-        session.powershell <<-EOH
-          if(Test-Path #{to})
-          {
-            rm #{to}
-          }
-        EOH
-        Base64.encode64(IO.binread(from)).gsub("\n",'').chars.to_a.each_slice(8000-file_name.size) do |chunk|
-          out = session.cmd("echo #{chunk.join} >> \"#{file_name}\"")
-        end
-        session.powershell("mkdir $([System.IO.Path]::GetDirectoryName(\"#{to}\"))")
-        session.powershell <<-EOH
-          $base64_string = Get-Content \"#{file_name}\"
-          $bytes  = [System.Convert]::FromBase64String($base64_string) 
-          $new_file = [System.IO.Path]::GetFullPath(\"#{to}\")
-          [System.IO.File]::WriteAllBytes($new_file,$bytes)
-        EOH
+        winrmshell.upload(from, to)
       end
       
       def download(from, to=nil)
         @logger.warn("Downloading: #{from} to #{to} not supported on Windows guests")
       end
       
-      # Runs a remote WQL query against the VM
-      #
-      # Note: This is not part of the standard Vagrant communicator interface, but
-      # guest capabilities may need to use this.
-      def wql(query)
-        session.wql(query)
+      def winrmshell=(winrmshell)
+        @winrmshell = winrmshell
       end
       
-      def set_winrmshell(winrmshell)
-        @session = winrmshell
+      def winrmshell
+        @winrmshell ||= @winrm_shell_factory.create_winrm_shell()
       end
-      
-      def session
-        @session ||= new_session
-      end
-      alias_method :winrmshell, :session
       
       
       protected
       
       def do_execute(command, shell, &block)
         if shell.eql? :cmd
-          session.cmd(command, &block)[:exitcode]
+          winrmshell.cmd(command, &block)[:exitcode]
         else
           command = VagrantWindows.load_script("command_alias.ps1") << "\r\n" << command
-          session.powershell(command, &block)[:exitcode]
+          winrmshell.powershell(command, &block)[:exitcode]
         end
       end
       
@@ -128,18 +101,6 @@ module VagrantWindows
         msg = "Command execution failed with an exit code of #{exit_code}"
         error_opts = opts.merge(:_key => opts[:error_key], :message => msg)
         raise opts[:error_class], error_opts
-      end
-      
-      def new_session
-        WinRMShell.new(
-          @winrm_finder.winrm_host_address(),
-          @machine.config.winrm.username,
-          @machine.config.winrm.password,
-          {
-            :port => @winrm_finder.winrm_host_port(),
-            :timeout_in_seconds => @machine.config.winrm.timeout,
-            :max_tries => @machine.config.winrm.max_tries
-          })
       end
       
     end #WinRM class

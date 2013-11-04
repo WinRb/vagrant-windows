@@ -1,46 +1,49 @@
 require 'log4r'
 require_relative '../errors'
+require_relative '../windows_machine'
 
 module VagrantWindows
   module Communication
     class WinRMFinder
 
       attr_reader :logger
-      attr_reader :machine
+      attr_reader :windows_machine
     
-      def initialize(machine)
-        @machine = machine
+      def initialize(windows_machine)
+        @windows_machine = windows_machine
         @logger = Log4r::Logger.new("vagrant_windows::communication::winrmfinder")
       end
 
-      def winrm_host_address
+      # Finds the address of the Windows machine.
+      # Raises a Vagrant::Errors::SSHNotReady if WinRM is not responding yet.
+      #
+      # @return [String] The IP of the Windows machine
+      def find_winrm_host_address
         # Get the SSH info for the machine, raise an exception if the
         # provider is saying that the machine is not ready.
-        ssh_info = @machine.ssh_info
+        ssh_info = @windows_machine.ssh_info
         raise VagrantWindows::Errors::WinRMNotReady if ssh_info.nil?
         
         # if the configuration has a host value, that takes precedence
-        host = @machine.config.winrm.host || ssh_info[:host]
+        host = @windows_machine.winrm_config.host || ssh_info[:host]
         @logger.info("WinRM host: #{host}")
         host
       end
       
-      def winrm_host_port
-        expected_guest_port = @machine.config.winrm.guest_port
+      # Finds the IP port of the Windows machine's WinRM service.
+      #
+      # @return [String] The port of the Windows machine's WinRM service
+      def find_winrm_host_port
+        expected_guest_port = @windows_machine.winrm_config.guest_port
         @logger.debug("Searching for WinRM port: #{expected_guest_port.inspect}")
 
         # Look for the forwarded port only by comparing the guest port
-        begin
-          @machine.provider.driver.read_forwarded_ports.each do |_, _, hostport, guestport|
-            return hostport if guestport == expected_guest_port
-          end
-        rescue NoMethodError => e
-          # VMWare provider doesn't support read_forwarded_ports
-          @logger.debug(e.message)
+        @windows_machine.read_forwarded_ports().each do |_, _, hostport, guestport|
+          return hostport if guestport == expected_guest_port
         end
         
         # We tried, give up and use the configured port as-is
-        @machine.config.winrm.port
+        @windows_machine.winrm_config.port
       end
       
     end

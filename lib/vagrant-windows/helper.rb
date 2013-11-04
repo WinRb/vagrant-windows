@@ -21,13 +21,6 @@ module VagrantWindows
     def win_friendly_share_id(shared_folder_name)
       return shared_folder_name.gsub(/[\/\/]/,'_').sub(/^_/, '')
     end
-    
-    # Checks to see if the specified machine is using VMWare Fusion or Workstation.
-    #
-    # @return [Boolean]
-    def is_vmware(machine)
-      machine.provider_name.to_s().start_with?('vmware')
-    end
-    
+
   end
 end

@@ -12,11 +12,13 @@ module VagrantWindows
       # Vagrant 1.1.x compatibility methods
       # Implement the 1.1.x methods and call through to the new 1.2.x capabilities
       
+      attr_reader :windows_machine
       attr_reader :machine
       
       def initialize(machine = nil)
         super(machine) unless machine == nil
         @machine = machine
+        @windows_machine = ::VagrantWindows::WindowsMachine.new(machine)
       end
       
       def change_host_name(name)
@@ -32,7 +34,7 @@ module VagrantWindows
       end
       
       def mount_shared_folder(name, guestpath, options)
-        if VagrantWindows::Helper.is_vmware(@machine) then
+        if @windows_machine.is_vmware?() then
           VagrantWindows::Guest::Cap::MountSharedFolder.mount_vmware_shared_folder(
             @machine, name, guestpath, options)
         else
