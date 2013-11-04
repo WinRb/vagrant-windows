@@ -5,7 +5,7 @@ describe VagrantWindows::Communication::WinRMShell, :integration => true do
   before(:all) do
     # This test requires you already have a running Windows Server 2008 R2 Vagrant VM
     # Not ideal, but you have to start somewhere
-    @shell = VagrantWindows::Communication::WinRMShell.new("localhost", "vagrant", "vagrant")
+    @shell = VagrantWindows::Communication::WinRMShell.new("127.0.0.1", "vagrant", "vagrant")
   end
   
   describe "powershell" do
