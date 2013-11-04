@@ -22,11 +22,11 @@ module VagrantWindows
       # @return [WinRMShell]
       def create_winrm_shell()
         WinRMShell.new(
-          @winrmfinder.find_winrm_host_address(),
+          @winrmfinder.winrm_host_address(),
           @windows_machine.winrm_config.username,
           @windows_machine.winrm_config.password,
           {
-            :port => @winrmfinder.find_winrm_host_port(),
+            :port => @winrmfinder.winrm_host_port(),
             :timeout_in_seconds => @windows_machine.winrm_config.timeout,
             :max_tries => @windows_machine.winrm_config.max_tries
           })
