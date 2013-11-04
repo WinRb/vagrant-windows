@@ -1,6 +1,7 @@
 require 'tempfile'
 require "#{Vagrant::source_root}/plugins/provisioners/chef/provisioner/chef_solo"
 require_relative '../../../../../helper'
+require_relative '../../../../../windows_machine'
 
 module VagrantPlugins
   module Chef
@@ -14,25 +15,16 @@ module VagrantPlugins
 
         # This patch is needed until Vagrant supports chef on Windows guests
         define_method(:run_chef_solo) do
-          is_windows ? run_chef_solo_on_windows() : run_chef_solo_on_linux.bind(self).()
+          VagrantWindows::WindowsMachine.is_windows?(@machine) ? run_chef_solo_on_windows() : run_chef_solo_on_linux.bind(self).()
         end
         
         define_method(:provision) do
-          wait_if_rebooting() if is_windows
+          windows_machine = VagrantWindows::WindowsMachine.new(@machine)
+          wait_if_rebooting(windows_machine) if VagrantWindows::WindowsMachine.is_windows?(@machine)
           provision_on_linux.bind(self).()
         end
         
-        def wait_if_rebooting
-          # Check to see if the guest is rebooting, if its rebooting then wait until its ready
-          @logger.info('Checking guest reboot status')
-          
-          while is_rebooting?(machine) 
-            @logger.debug('Guest is rebooting, waiting 10 seconds...')
-            sleep(10)
-          end
-        end
-        
-        def run_chef_solo_on_windows          
+        def run_chef_solo_on_windows
           # create cheftaskrun.ps1 that the scheduled task will invoke when run
           render_file_and_upload("cheftaskrun.ps1", chef_script_options[:chef_task_run_ps1], :options => chef_script_options)
 
@@ -114,15 +106,6 @@ module VagrantPlugins
             }
           end
           @chef_script_options
-        end
-        
-        def is_rebooting?(machine)
-          reboot_detect_script = VagrantWindows.load_script('reboot_detect.ps1')
-          @machine.communicate.execute(reboot_detect_script, :error_check => false) != 0
-        end
-        
-        def is_windows
-          @machine.config.vm.guest.eql? :windows
         end
         
       end # ChefSolo class

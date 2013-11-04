@@ -16,6 +16,7 @@ module VagrantWindows
     # @param [Machine] The Vagrant machine object
     def initialize(machine)
       @machine = machine
+      @logger = Log4r::Logger.new("vagrant_windows::windows_machine")
     end
     
     # Checks to see if the machine is using VMWare Fusion or Workstation.
@@ -23,6 +24,14 @@ module VagrantWindows
     # @return [Boolean]
     def is_vmware?()
       @machine.provider_name.to_s().start_with?('vmware')
+    end
+    
+    # Checks to see if the machine is rebooting or has a scheduled reboot.
+    #
+    # @return [Boolean] True if rebooting
+    def is_rebooting?()
+      reboot_detect_script = VagrantWindows.load_script('reboot_detect.ps1')
+      @machine.communicate.execute(reboot_detect_script, :error_check => false) != 0
     end
     
     # Returns the active WinRMShell for the guest.
