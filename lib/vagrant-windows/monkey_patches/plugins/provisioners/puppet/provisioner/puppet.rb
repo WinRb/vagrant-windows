@@ -1,20 +1,31 @@
 require "#{Vagrant::source_root}/plugins/provisioners/puppet/provisioner/puppet"
+require_relative '../../../../../windows_machine'
+require_relative '../../../../../helper'
 
 module VagrantPlugins
   module Puppet
     module Provisioner
       class Puppet < Vagrant.plugin("2", :provisioner)
+        
+        include VagrantWindows::Helper
 
         # This patch is needed until Vagrant supports Puppet on Windows guests
+        provision_on_linux = instance_method(:provision)
         run_puppet_apply_on_linux = instance_method(:run_puppet_apply)
         configure_on_linux = instance_method(:configure)
 
         define_method(:run_puppet_apply) do
-          is_windows ? run_puppet_apply_on_windows() : run_puppet_apply_on_linux.bind(self).()
+          is_windows? ? run_puppet_apply_on_windows() : run_puppet_apply_on_linux.bind(self).()
         end
 
         define_method(:configure) do |root_config|
-          is_windows ? configure_on_windows(root_config) : configure_on_linux.bind(self).(root_config)
+          is_windows? ? configure_on_windows(root_config) : configure_on_linux.bind(self).(root_config)
+        end
+        
+        define_method(:provision) do
+          windows_machine = VagrantWindows::WindowsMachine.new(@machine)
+          wait_if_rebooting(windows_machine) if is_windows?
+          provision_on_linux.bind(self).()
         end
 
         def run_puppet_apply_on_windows
@@ -108,8 +119,8 @@ module VagrantPlugins
           end
         end
 
-        def is_windows
-          @machine.config.vm.guest.eql? :windows
+        def is_windows?
+          VagrantWindows::WindowsMachine.is_windows?(@machine)
         end
 
       end # Puppet class

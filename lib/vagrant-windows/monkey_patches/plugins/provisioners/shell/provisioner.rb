@@ -1,5 +1,6 @@
 require "#{Vagrant::source_root}/plugins/provisioners/shell/provisioner"
 require_relative '../../../../helper'
+require_relative '../../../../windows_machine'
 
 module VagrantPlugins
   module Shell
@@ -11,12 +12,15 @@ module VagrantPlugins
         provision_on_linux = instance_method(:provision)
         
         define_method(:provision) do
-          is_windows ? provision_on_windows() : provision_on_linux.bind(self).()
+          VagrantWindows::WindowsMachine.is_windows?(@machine) ? provision_on_windows() : provision_on_linux.bind(self).()
         end
-
+        
         def provision_on_windows
             args = ""
             args = " #{config.args}" if config.args
+
+            windows_machine = VagrantWindows::WindowsMachine.new(@machine)
+            wait_if_rebooting(windows_machine)
 
             with_script_file do |path|
             # Upload the script to the machine
@@ -78,10 +82,6 @@ module VagrantPlugins
               file.unlink
             end
           end
-        end
-
-        def is_windows
-            @machine.config.vm.guest.eql? :windows
         end
 
       end # Provisioner class

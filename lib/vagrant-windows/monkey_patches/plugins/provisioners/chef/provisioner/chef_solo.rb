@@ -15,12 +15,12 @@ module VagrantPlugins
 
         # This patch is needed until Vagrant supports chef on Windows guests
         define_method(:run_chef_solo) do
-          VagrantWindows::WindowsMachine.is_windows?(@machine) ? run_chef_solo_on_windows() : run_chef_solo_on_linux.bind(self).()
+          is_windows? ? run_chef_solo_on_windows() : run_chef_solo_on_linux.bind(self).()
         end
         
         define_method(:provision) do
           windows_machine = VagrantWindows::WindowsMachine.new(@machine)
-          wait_if_rebooting(windows_machine) if VagrantWindows::WindowsMachine.is_windows?(@machine)
+          wait_if_rebooting(windows_machine) if is_windows?
           provision_on_linux.bind(self).()
         end
         
@@ -106,6 +106,10 @@ module VagrantPlugins
             }
           end
           @chef_script_options
+        end
+        
+        def is_windows?
+          VagrantWindows::WindowsMachine.is_windows?(@machine)
         end
         
       end # ChefSolo class
