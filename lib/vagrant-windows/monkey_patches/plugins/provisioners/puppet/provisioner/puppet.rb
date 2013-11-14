@@ -34,7 +34,7 @@ module VagrantPlugins
           # This re-establishes our symbolic links if they were created between now and a reboot
           @machine.communicate.execute('& net use a-non-existant-share', :error_check => false)
           
-          options = [config.options].flatten
+          options = [@config.options].flatten
           module_paths = @module_paths.map { |_, to| to }
           if !@module_paths.empty?
             # Prepend the default module path
@@ -59,9 +59,9 @@ module VagrantPlugins
 
           # Build up the custom facts if we have any
           facter = ""
-          if !config.facter.empty?
+          if !@config.facter.empty?
             facts = []
-            config.facter.each do |key, value|
+            @config.facter.each do |key, value|
               facts << "$env:FACTER_#{key}='#{value}';"
             end
 
@@ -69,8 +69,8 @@ module VagrantPlugins
           end
 
           command = "#{facter} puppet apply #{options}"
-          if config.working_directory
-            command = "cd #{config.working_directory}; if($?) \{ #{command} \}"
+          if @config.working_directory
+            command = "cd #{@config.working_directory}; if($?) \{ #{command} \}"
           end
 
           @machine.env.ui.info I18n.t("vagrant.provisioners.puppet.running_puppet",
@@ -84,7 +84,7 @@ module VagrantPlugins
           
           # Puppet returns 0 or 2 for success with --detailed-exitcodes
           if ![0,2].include?(exit_status)
-            raise Errors::WinRMExecutionError,
+            raise ::VagrantWindows::Errors::WinRMExecutionError,
               :shell => :powershell,
               :command => command,
               :message => "Puppet failed with an exit code of #{exit_status}"
@@ -101,7 +101,7 @@ module VagrantPlugins
           # Setup the module paths
           @module_paths = []
           @expanded_module_paths.each_with_index do |path, i|
-            @module_paths << [path, File.join(config.temp_dir, "modules-#{i}")]
+            @module_paths << [path, File.join(@config.temp_dir, "modules-#{i}")]
           end
 
           @logger.debug("Syncing folders from puppet configure")
