@@ -1,6 +1,7 @@
 require "#{Vagrant::source_root}/plugins/provisioners/puppet/provisioner/puppet"
 require_relative '../../../../../windows_machine'
 require_relative '../../../../../helper'
+require_relative '../../../../../errors'
 
 module VagrantPlugins
   module Puppet
@@ -75,10 +76,18 @@ module VagrantPlugins
           @machine.env.ui.info I18n.t("vagrant.provisioners.puppet.running_puppet",
                                       :manifest => @manifest_file)
 
-          @machine.communicate.sudo(command) do |type, data|
+          exit_status = @machine.communicate.sudo(command, :error_check => false) do |type, data|
             if !data.empty?
               @machine.env.ui.info(data, :new_line => false, :prefix => false)
             end
+          end
+          
+          # Puppet returns 0 or 2 for success with --detailed-exitcodes
+          if ![0,2].include?(exit_status)
+            raise Errors::WinRMExecutionError,
+              :shell => :powershell,
+              :command => command,
+              :message => "Puppet failed with an exit code of #{exit_status}"
           end
         end
 
