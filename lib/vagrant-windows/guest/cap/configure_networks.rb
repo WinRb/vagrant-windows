@@ -17,29 +17,31 @@ module VagrantWindows
           
           windows_machine = VagrantWindows::WindowsMachine.new(machine)
           guest_network = VagrantWindows::Communication::GuestNetwork.new(windows_machine.winrmshell)
-          unless windows_machine.is_vmware?() 
-            vm_interface_map = create_vm_interface_map(windows_machine, guest_network)
-          end
-          
-          networks.each do |network|
-            interface = vm_interface_map[network[:interface]+1]
-            if interface.nil?
-              @@logger.warn("Could not find interface for network #{network.inspect}")
-              next
-            end
-            network_type = network[:type].to_sym
-            if network_type == :static
-              guest_network.configure_static_interface(
-                interface[:index],
-                interface[:net_connection_id],
-                network[:ip],
-                network[:netmask])
-            elsif network_type == :dhcp
-              guest_network.configure_dhcp_interface(
-                interface[:index],
-                interface[:net_connection_id])
-            else
-              raise WindowsError, "#{network_type} network type is not supported, try static or dhcp"
+          if windows_machine.is_vmware?()
+            @@logger.warn('Configuring secondary network adapters through VMware is not yet supported.')
+            @@logger.warn('You will need to manually configure the network adapter.')
+          else
+            vm_interface_map = create_vm_interface_map(windows_machine, guest_network)          
+            networks.each do |network|
+              interface = vm_interface_map[network[:interface]+1]
+              if interface.nil?
+                @@logger.warn("Could not find interface for network #{network.inspect}")
+                next
+              end
+              network_type = network[:type].to_sym
+              if network_type == :static
+                guest_network.configure_static_interface(
+                  interface[:index],
+                  interface[:net_connection_id],
+                  network[:ip],
+                  network[:netmask])
+              elsif network_type == :dhcp
+                guest_network.configure_dhcp_interface(
+                  interface[:index],
+                  interface[:net_connection_id])
+              else
+                raise WindowsError, "#{network_type} network type is not supported, try static or dhcp"
+              end
             end
           end
           guest_network.set_all_networks_to_work() if windows_machine.windows_config.set_work_network
