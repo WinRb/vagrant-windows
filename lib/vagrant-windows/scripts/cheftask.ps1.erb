@@ -1,8 +1,5 @@
-schtasks /query /tn "chef-solo" | Out-Null
-if ($?) {
-  # task already exists, kill it
-  schtasks /delete /tn "chef-solo" /f | Out-Null
-}
+# kill the task so we can recreate it
+schtasks /delete /tn "chef-solo" /f 2>&1 | out-null
 
 # Ensure the chef task running file doesn't exist from a previous failure
 if (Test-Path "<%= options[:chef_task_running] %>") {
@@ -34,14 +31,16 @@ $success = $TRUE
 while (Test-Path "<%= options[:chef_task_running] %>") {
   Start-Sleep -m 100
   
-  $text = (get-content "<%= options[:chef_stdout_log] %>")
-  $numLines = ($text | Measure-Object -line).lines    
-  $numLinesToRead = $numLines - $numLinesRead
+  if (Test-Path "<%= options[:chef_stdout_log] %>") {
+    $text = (get-content "<%= options[:chef_stdout_log] %>")
+    $numLines = ($text | Measure-Object -line).lines    
+    $numLinesToRead = $numLines - $numLinesRead
   
-  $text | select -first $numLinesToRead -skip $numLinesRead | ForEach {
-    Write-Host "$_"
+    $text | select -first $numLinesToRead -skip $numLinesRead | ForEach {
+      Write-Host "$_"
+    }
+    $numLinesRead += $numLinesToRead
   }
-  $numLinesRead += $numLinesToRead
 }
 
 exit Get-Content "<%= options[:chef_task_exitcode] %>"
