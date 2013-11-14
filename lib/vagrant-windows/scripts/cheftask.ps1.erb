@@ -35,11 +35,13 @@ while (Test-Path "<%= options[:chef_task_running] %>") {
     $text = (get-content "<%= options[:chef_stdout_log] %>")
     $numLines = ($text | Measure-Object -line).lines    
     $numLinesToRead = $numLines - $numLinesRead
-  
-    $text | select -first $numLinesToRead -skip $numLinesRead | ForEach {
-      Write-Host "$_"
+    
+    if ($numLinesToRead -gt 0) {
+      $text | select -first $numLinesToRead -skip $numLinesRead | ForEach {
+        Write-Host "$_"
+      }
+      $numLinesRead += $numLinesToRead
     }
-    $numLinesRead += $numLinesToRead
   }
 }
 
