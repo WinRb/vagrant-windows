@@ -5,9 +5,8 @@ describe VagrantWindows::Communication::WinRMCommunicator, :integration => true 
   before(:all) do
     # This test requires you already have a running Windows Server 2008 R2 Vagrant VM
     # Not ideal, but you have to start somewhere
-    @shell = VagrantWindows::Communication::WinRMShell.new("localhost", "vagrant", "vagrant")
     @communicator = VagrantWindows::Communication::WinRMCommunicator.new({})
-    @communicator.set_winrmshell(@shell)
+    @communicator.winrmshell = VagrantWindows::Communication::WinRMShell.new("127.0.0.1", "vagrant", "vagrant")
   end
   
   describe "execute" do
@@ -22,6 +21,26 @@ describe VagrantWindows::Communication::WinRMCommunicator, :integration => true 
     it "should raise specified error type when specified and error_check is true" do
       opts = { :error_class => VagrantWindows::Errors::WinRMInvalidShell }
       expect { @communicator.execute("exit 1", opts) }.to raise_error(VagrantWindows::Errors::WinRMInvalidShell)
+    end
+  end
+  
+  describe "upload" do
+    it "should upload the file and overwrite it if it exists" do
+      test_file = Tempfile.new("uploadtest")
+      IO.write(test_file, "hello world")
+      @communicator.upload(test_file, "c:\\vagrantuploadtest.txt")
+      
+      # ensure we can overwrite
+      IO.write(test_file, "goodbye cruel world")
+      @communicator.upload(test_file, "c:\\vagrantuploadtest.txt")
+      
+      # get the uploaded file's contents to ensure it uploaded properly
+      uploaded_file_content = ''
+      @communicator.execute("cat c:\\vagrantuploadtest.txt", {}) do |type, line|
+        uploaded_file_content = uploaded_file_content + line
+      end
+      
+      expect(uploaded_file_content.chomp).to eq("goodbye cruel world")
     end
   end
 

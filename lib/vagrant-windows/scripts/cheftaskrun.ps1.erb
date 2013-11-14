@@ -10,7 +10,9 @@ Try
 Finally
 {
   $exitCode | Out-File "<%= options[:chef_task_exitcode] %>"
-  del "<%= options[:chef_task_running] %>"
+  if (Test-Path "<%= options[:chef_task_running] %>") {
+    del "<%= options[:chef_task_running] %>"
+  }
 }
 
 exit $exitCode

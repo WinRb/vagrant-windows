@@ -56,6 +56,26 @@ module VagrantWindows
       def wql(query)
         execute_wql(query)
       end
+      
+      def upload(from, to)
+        @logger.debug("Uploading: #{from} to #{to}")
+        file_name = (cmd("echo %TEMP%\\winrm-upload-#{rand()}"))[:data][0][:stdout].chomp
+        powershell <<-EOH
+          if(Test-Path #{to}) {
+            rm #{to}
+          }
+        EOH
+        Base64.encode64(IO.binread(from)).gsub("\n",'').chars.to_a.each_slice(8000-file_name.size) do |chunk|
+          out = cmd("echo #{chunk.join} >> \"#{file_name}\"")
+        end
+        powershell <<-EOH
+          mkdir $([System.IO.Path]::GetDirectoryName(\"#{to}\"))
+          $base64_string = Get-Content \"#{file_name}\"
+          $bytes  = [System.Convert]::FromBase64String($base64_string) 
+          $new_file = [System.IO.Path]::GetFullPath(\"#{to}\")
+          [System.IO.File]::WriteAllBytes($new_file,$bytes)
+        EOH
+      end
 
       protected
       

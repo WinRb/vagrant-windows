@@ -17,8 +17,7 @@ describe VagrantWindows::Communication::WinRMFinder, :unit => true do
       # setup the winrm config to return nil for the host (i.e. the default)
       winrm_config = VagrantWindows::Config::WinRM.new()
       winrm_config.finalize!()
-      machine_config = stub(:winrm => winrm_config)
-      @machine.stubs(:config).returns(machine_config)
+      @machine.stubs(:winrm_config).returns(winrm_config)
       
       # setup the machine ssh_info to return a 10.0.0.1
       @machine.stubs(:ssh_info).returns({ :host => '10.0.0.1' })
@@ -31,8 +30,7 @@ describe VagrantWindows::Communication::WinRMFinder, :unit => true do
       winrm_config = VagrantWindows::Config::WinRM.new()
       winrm_config.host = '10.0.0.1'
       winrm_config.finalize!()
-      machine_config = stub(:winrm => winrm_config)
-      @machine.stubs(:config).returns(machine_config)
+      @machine.stubs(:winrm_config).returns(winrm_config)
       
       # setup the machine ssh_info to return a 10.0.0.1
       @machine.stubs(:ssh_info).returns({ :host => '127.0.0.1' })

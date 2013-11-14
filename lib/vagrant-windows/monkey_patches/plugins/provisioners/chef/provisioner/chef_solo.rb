@@ -1,6 +1,7 @@
 require 'tempfile'
 require "#{Vagrant::source_root}/plugins/provisioners/chef/provisioner/chef_solo"
 require_relative '../../../../../helper'
+require_relative '../../../../../windows_machine'
 
 module VagrantPlugins
   module Chef
@@ -9,19 +10,21 @@ module VagrantPlugins
         
         include VagrantWindows::Helper
 
+        provision_on_linux = instance_method(:provision)
         run_chef_solo_on_linux = instance_method(:run_chef_solo)
 
         # This patch is needed until Vagrant supports chef on Windows guests
         define_method(:run_chef_solo) do
-          is_windows ? run_chef_solo_on_windows() : run_chef_solo_on_linux.bind(self).()
+          is_windows? ? run_chef_solo_on_windows() : run_chef_solo_on_linux.bind(self).()
+        end
+        
+        define_method(:provision) do
+          windows_machine = VagrantWindows::WindowsMachine.new(@machine)
+          wait_if_rebooting(windows_machine) if is_windows?
+          provision_on_linux.bind(self).()
         end
         
         def run_chef_solo_on_windows
-          
-          # This re-establishes our symbolic links if they were created between now and a reboot
-          # Fixes issue #119
-          @machine.communicate.execute('& net use a-non-existant-share', :error_check => false)
-          
           # create cheftaskrun.ps1 that the scheduled task will invoke when run
           render_file_and_upload("cheftaskrun.ps1", chef_script_options[:chef_task_run_ps1], :options => chef_script_options)
 
@@ -45,6 +48,10 @@ module VagrantPlugins
             else
               @machine.env.ui.info I18n.t("vagrant.provisioners.chef.running_solo_again")
             end
+            
+            # This re-establishes our symbolic links if they were created between now and a reboot
+            # Fixes issue #119
+            @machine.communicate.execute('& net use a-non-existant-share', :error_check => false)
 
             exit_status = @machine.communicate.execute(command, :error_check => false) do |type, data|
               # Output the data with the proper color based on the stream.
@@ -99,10 +106,10 @@ module VagrantPlugins
             }
           end
           @chef_script_options
-        end        
+        end
         
-        def is_windows
-          @machine.config.vm.guest.eql? :windows
+        def is_windows?
+          VagrantWindows::WindowsMachine.is_windows?(@machine)
         end
         
       end # ChefSolo class

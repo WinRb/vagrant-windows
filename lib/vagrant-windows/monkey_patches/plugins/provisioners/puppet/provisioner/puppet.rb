@@ -1,20 +1,32 @@
 require "#{Vagrant::source_root}/plugins/provisioners/puppet/provisioner/puppet"
+require_relative '../../../../../windows_machine'
+require_relative '../../../../../helper'
+require_relative '../../../../../errors'
 
 module VagrantPlugins
   module Puppet
     module Provisioner
       class Puppet < Vagrant.plugin("2", :provisioner)
+        
+        include VagrantWindows::Helper
 
         # This patch is needed until Vagrant supports Puppet on Windows guests
+        provision_on_linux = instance_method(:provision)
         run_puppet_apply_on_linux = instance_method(:run_puppet_apply)
         configure_on_linux = instance_method(:configure)
 
         define_method(:run_puppet_apply) do
-          is_windows ? run_puppet_apply_on_windows() : run_puppet_apply_on_linux.bind(self).()
+          is_windows? ? run_puppet_apply_on_windows() : run_puppet_apply_on_linux.bind(self).()
         end
 
         define_method(:configure) do |root_config|
-          is_windows ? configure_on_windows(root_config) : configure_on_linux.bind(self).(root_config)
+          is_windows? ? configure_on_windows(root_config) : configure_on_linux.bind(self).(root_config)
+        end
+        
+        define_method(:provision) do
+          windows_machine = VagrantWindows::WindowsMachine.new(@machine)
+          wait_if_rebooting(windows_machine) if is_windows?
+          provision_on_linux.bind(self).()
         end
 
         def run_puppet_apply_on_windows
@@ -22,7 +34,7 @@ module VagrantPlugins
           # This re-establishes our symbolic links if they were created between now and a reboot
           @machine.communicate.execute('& net use a-non-existant-share', :error_check => false)
           
-          options = [config.options].flatten
+          options = [@config.options].flatten
           module_paths = @module_paths.map { |_, to| to }
           if !@module_paths.empty?
             # Prepend the default module path
@@ -47,9 +59,9 @@ module VagrantPlugins
 
           # Build up the custom facts if we have any
           facter = ""
-          if !config.facter.empty?
+          if !@config.facter.empty?
             facts = []
-            config.facter.each do |key, value|
+            @config.facter.each do |key, value|
               facts << "$env:FACTER_#{key}='#{value}';"
             end
 
@@ -57,17 +69,25 @@ module VagrantPlugins
           end
 
           command = "#{facter} puppet apply #{options}"
-          if config.working_directory
-            command = "cd #{config.working_directory}; if($?) \{ #{command} \}"
+          if @config.working_directory
+            command = "cd #{@config.working_directory}; if($?) \{ #{command} \}"
           end
 
           @machine.env.ui.info I18n.t("vagrant.provisioners.puppet.running_puppet",
                                       :manifest => @manifest_file)
 
-          @machine.communicate.sudo(command) do |type, data|
+          exit_status = @machine.communicate.sudo(command, :error_check => false) do |type, data|
             if !data.empty?
               @machine.env.ui.info(data, :new_line => false, :prefix => false)
             end
+          end
+          
+          # Puppet returns 0 or 2 for success with --detailed-exitcodes
+          if ![0,2].include?(exit_status)
+            raise ::VagrantWindows::Errors::WinRMExecutionError,
+              :shell => :powershell,
+              :command => command,
+              :message => "Puppet failed with an exit code of #{exit_status}"
           end
         end
 
@@ -81,7 +101,7 @@ module VagrantPlugins
           # Setup the module paths
           @module_paths = []
           @expanded_module_paths.each_with_index do |path, i|
-            @module_paths << [path, File.join(config.temp_dir, "modules-#{i}")]
+            @module_paths << [path, File.join(@config.temp_dir, "modules-#{i}")]
           end
 
           @logger.debug("Syncing folders from puppet configure")
@@ -108,8 +128,8 @@ module VagrantPlugins
           end
         end
 
-        def is_windows
-          @machine.config.vm.guest.eql? :windows
+        def is_windows?
+          VagrantWindows::WindowsMachine.is_windows?(@machine)
         end
 
       end # Puppet class
