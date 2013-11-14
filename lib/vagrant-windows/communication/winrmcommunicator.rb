@@ -90,7 +90,7 @@ module VagrantWindows
         if shell.eql? :cmd
           winrmshell.cmd(command, &block)[:exitcode]
         else
-          command = VagrantWindows.load_script("command_alias.ps1") << "\r\n" << command
+          command = VagrantWindows.load_script("command_alias.ps1") << "\r\n" << command << "\r\nexit $LASTEXITCODE"
           winrmshell.powershell(command, &block)[:exitcode]
         end
       end
