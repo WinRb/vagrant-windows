@@ -53,7 +53,8 @@ These commands assume you're running from a regular command window and not Power
 These additional configuration steps are specific to Windows7 and Windows Server 2008 (WinRM 1.1). For Windows Server 2008 R2 and newer you can ignore this section.
 
 1. Ensure the Windows PowerShell feature is installed
-2. [change the default WinRM port](http://technet.microsoft.com/en-us/library/ff520073(v=ws.10).aspx) - see below or [upgrade to WinRM 2.0](http://www.microsoft.com/en-us/download/details.aspx?id=20430).
+2. [Change the default WinRM port](http://technet.microsoft.com/en-us/library/ff520073\(v=ws.10\).aspx) (see below) or [upgrade to WinRM 2.0](http://www.microsoft.com/en-us/download/details.aspx?id=20430).
+
 ```
 netsh firewall add portopening TCP 5985 "Port 5985"
 winrm set winrm/config/listener?Address=*+Transport=HTTP @{Port="5985"}
