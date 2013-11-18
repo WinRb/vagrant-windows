@@ -50,7 +50,7 @@ These commands assume you're running from a regular command window and not Power
 
 #### Additional WinRM 1.1 Configuration
 
-These additional configuration steps are specific to Windows7 and Windows Server 2008 (WinRM 1.1). For Windows Server 2008 R2 and newer you can ignore this section.
+These additional configuration steps are specific to Windows Server 2008 (WinRM 1.1). For Windows Server 2008 R2, Windows 7 and later versions of Windows you can ignore this section.
 
 1. Ensure the Windows PowerShell feature is installed
 2. [Change the default WinRM port](http://technet.microsoft.com/en-us/library/ff520073\(v=ws.10\).aspx) (see below) or [upgrade to WinRM 2.0](http://www.microsoft.com/en-us/download/details.aspx?id=20430).
