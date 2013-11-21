@@ -26,6 +26,13 @@ module VagrantWindows
       @machine.provider_name.to_s().start_with?('vmware')
     end
     
+    # Checks to see if the machine is using Oracle VirtualBox.
+    #
+    # @return [Boolean]
+    def is_virtualbox?()
+      @machine.provider_name.to_s().start_with?('virtualbox')
+    end
+    
     # Checks to see if the machine is rebooting or has a scheduled reboot.
     #
     # @return [Boolean] True if rebooting
@@ -50,11 +57,15 @@ module VagrantWindows
     end
     
     # Returns a list of forwarded ports for a VM.
-    # NOTE: For VMWare this is currently unsupported.
+    # NOTE: Only the VBox provider currently supports this method
     #
     # @return [Array<Array>]
     def read_forwarded_ports()
-      is_vmware?() ? [] : @machine.provider.driver.read_forwarded_ports
+      if is_virtualbox?()
+        @machine.provider.driver.read_forwarded_ports
+      else
+        []
+      end
     end
     
     # Returns the SSH config for this machine.

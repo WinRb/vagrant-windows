@@ -24,6 +24,20 @@ describe VagrantWindows::WindowsMachine , :unit => true do
     end
   end
   
+  describe "is_virtualbox?" do
+    it "should be true for virtualbox" do
+      machine = stub(:provider_name => :virtualbox)
+      windows_machine = VagrantWindows::WindowsMachine.new(machine)
+      expect(windows_machine.is_virtualbox?()).to be_true
+    end
+    
+    it "should be false for vmware_workstation" do
+      machine = stub(:provider_name => :vmware_workstation)
+      windows_machine = VagrantWindows::WindowsMachine.new(machine)
+      expect(windows_machine.is_virtualbox?()).to be_false
+    end
+  end
+  
   describe "is_windows?" do
     it "should return true when config vm guest is windows" do
       vm = stub(:guest => :windows)
@@ -38,7 +52,14 @@ describe VagrantWindows::WindowsMachine , :unit => true do
       machine = stub(:config => config)
       expect(VagrantWindows::WindowsMachine.is_windows?(machine)).to be_false
     end
-
+  end
+  
+  describe "read_forwarded_ports" do
+    it "should return empty array for vmware provider" do
+      machine = stub(:provider_name => :vmware_fusion)
+      windows_machine = VagrantWindows::WindowsMachine.new(machine)
+      expect(windows_machine.read_forwarded_ports()).to eq([])
+    end
   end
 
 end
