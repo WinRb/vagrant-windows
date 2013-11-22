@@ -65,9 +65,9 @@ winrm set winrm/config/listener?Address=*+Transport=HTTP @{Port="5985"}
 If you like to turn off optional Windows services you'll need to ensure you leave these services enabled for vagrant-windows to continue to work:
 
   - Base Filtering Engine
-    - Remote Procedure Call (RPC)
-      - DCOM Server Process Launcher
-      - RPC Endpoint Mapper
+  - Remote Procedure Call (RPC)
+  - DCOM Server Process Launcher
+  - RPC Endpoint Mapper
   - Windows Firewall
   - Windows Remote Management (WS-Management)
   
