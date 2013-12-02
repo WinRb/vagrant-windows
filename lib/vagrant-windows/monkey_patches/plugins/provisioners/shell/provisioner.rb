@@ -22,7 +22,7 @@ module VagrantPlugins
             windows_machine = VagrantWindows::WindowsMachine.new(@machine)
             wait_if_rebooting(windows_machine)
 
-            with_script_file do |path|
+            with_windows_script_file do |path|
             # Upload the script to the machine
             @machine.communicate.tap do |comm|
               # Ensure the uploaded script has a file extension, by default
@@ -63,24 +63,38 @@ module VagrantPlugins
         # This method yields the path to a script to upload and execute
         # on the remote server. This method will properly clean up the
         # script file if needed.
-        def with_script_file
-          if config.path
-            # Just yield the path to that file...
-            yield config.path
-          else
-            # Otherwise we have an inline script, we need to Tempfile it,
-            # and handle it specially...
-            file = Tempfile.new(['vagrant-powershell', '.ps1'])
+        def with_windows_script_file
+          script = nil
 
-            begin
-              file.write(config.inline)
-              file.fsync
-              file.close
-              yield file.path
-            ensure
-              file.close
-              file.unlink
-            end
+          if config.remote?
+            download_path = @machine.env.tmp_path.join("#{@machine.id}-remote-script")
+            download_path.delete if download_path.file?
+
+            Vagrant::Util::Downloader.new(config.path, download_path).download!
+            script = download_path.read
+
+            download_path.delete
+          elsif config.path
+            # Just yield the path to that file...
+            root_path = @machine.env.root_path
+            script = Pathname.new(config.path).expand_path(root_path).read
+          else
+            # The script is just the inline code...
+            script = config.inline
+          end
+
+          # Otherwise we have an inline script, we need to Tempfile it,
+          # and handle it specially...
+          file = Tempfile.new(['vagrant-powershell', '.ps1'])
+
+          begin
+            file.write(script)
+            file.fsync
+            file.close
+            yield file.path
+          ensure
+            file.close
+            file.unlink
           end
         end
 
