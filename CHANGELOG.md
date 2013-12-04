@@ -57,3 +57,6 @@
 1.3.1
 - Fixed issue 137 - Cannot execute download script after installing the vagrant windows plugins
 - Fixed issue 138 - vagrant-windows errors out for providers other than VBox or VMware
+
+1.3.2
+- Fixed issue 145 - The shell provisioner wasn't respecting file extensions for non-inline scripts.
