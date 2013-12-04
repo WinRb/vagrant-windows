@@ -64,37 +64,35 @@ module VagrantPlugins
         # on the remote server. This method will properly clean up the
         # script file if needed.
         def with_windows_script_file
-          script = nil
-
           if config.remote?
-            download_path = @machine.env.tmp_path.join("#{@machine.id}-remote-script")
+            
+            download_path = @machine.env.tmp_path.join("#{@machine.id}-remote-script#{File.extname(config.path)}")
             download_path.delete if download_path.file?
 
-            Vagrant::Util::Downloader.new(config.path, download_path).download!
-            script = download_path.read
-
-            download_path.delete
+            begin
+              Vagrant::Util::Downloader.new(config.path, download_path).download!
+              yield download_path
+            ensure
+              download_path.delete
+            end
+            
           elsif config.path
             # Just yield the path to that file...
-            root_path = @machine.env.root_path
-            script = Pathname.new(config.path).expand_path(root_path).read
+            yield config.path
           else
-            # The script is just the inline code...
-            script = config.inline
-          end
+            # Otherwise we have an inline script, we need to Tempfile it,
+            # and handle it specially...
+            file = Tempfile.new(['vagrant-powershell', '.ps1'])
 
-          # Otherwise we have an inline script, we need to Tempfile it,
-          # and handle it specially...
-          file = Tempfile.new(['vagrant-powershell', '.ps1'])
-
-          begin
-            file.write(script)
-            file.fsync
-            file.close
-            yield file.path
-          ensure
-            file.close
-            file.unlink
+            begin
+              file.write(config.inline)
+              file.fsync
+              file.close
+              yield file.path
+            ensure
+              file.close
+              file.unlink
+            end
           end
         end
 
