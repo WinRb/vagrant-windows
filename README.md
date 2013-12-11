@@ -4,6 +4,7 @@
 [![Gem Version](https://badge.fury.io/rb/vagrant-windows.png)](http://badge.fury.io/rb/vagrant-windows)
 
 Use Windows guests with Vagrant
+### NOTE - this does not work on Vagrant 1.4 yet
 
 ## Getting Started
 1. Install the vagrant-windows plugin.
@@ -13,7 +14,7 @@ Use Windows guests with Vagrant
 
 ## Installation
 
-- For Vagrant 1.1 and above execute `vagrant plugin install vagrant-windows`.
+- For Vagrant 1.1 through 1.3.5 execute `vagrant plugin install vagrant-windows`.
 - For Vagrant 1.0 execute `vagrant plugin install vagrant-windows --plugin-version 0.1.2`.
 
 ## Creating a Base Box
