@@ -10,13 +10,16 @@ if Vagrant::VERSION < "1.1.0"
   raise "The Vagrant Windows plugin is only compatible with Vagrant 1.1+"
 end
 
-if Vagrant::VERSION >= "1.2.0"
+if Vagrant::VERSION >= "1.2.0" && Vagrant::VERSION < "1.4.0"
   # Monkey Patch the virtualbox share_folders action to make valid share names on windows
   require_relative "monkey_patches/plugins/providers/virtualbox/action/share_folders"
 end
 
-# Monkey patch the vbox42 driver to support read mac addresses
-require_relative "monkey_patches/plugins/providers/virtualbox/driver/version_4_2"
+# Monkey patch the vbox42 driver to support read mac addresses on old versions of Vagrant
+# before this commit 18417234787de9294abac5850ec426b841a09c87
+if Vagrant::VERSION < "1.2.5"
+  require_relative "monkey_patches/plugins/providers/virtualbox/driver/version_4_2"
+end
 
 # Monkey Patch the VM object to support multiple channels, i.e. WinRM
 require_relative "monkey_patches/lib/vagrant/machine"
