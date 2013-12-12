@@ -60,3 +60,8 @@
 
 1.3.2
 - Fixed issue 145 - The shell provisioner wasn't respecting file extensions for non-inline scripts.
+
+1.4.0
+- Added Vagrant 1.4.0 support, added VBox synced folder monkey patch for Vagrant 1.4
+- Fixed issue 149 - Added documentation about auto_correct for winrm port
+- Fixed issue 152 - Chef task fails when password contains $

@@ -4,7 +4,6 @@
 [![Gem Version](https://badge.fury.io/rb/vagrant-windows.png)](http://badge.fury.io/rb/vagrant-windows)
 
 Use Windows guests with Vagrant
-### NOTE - this does not work on Vagrant 1.4 yet
 
 ## Getting Started
 1. Install the vagrant-windows plugin.
@@ -14,7 +13,7 @@ Use Windows guests with Vagrant
 
 ## Installation
 
-- For Vagrant 1.1 through 1.3.5 execute `vagrant plugin install vagrant-windows`.
+- For Vagrant 1.1 and above execute `vagrant plugin install vagrant-windows`.
 - For Vagrant 1.0 execute `vagrant plugin install vagrant-windows --plugin-version 0.1.2`.
 
 ## Creating a Base Box
@@ -78,22 +77,12 @@ Add the following to your Vagrantfile
 
 ```ruby
 config.vm.guest = :windows
-config.windows.halt_timeout = 25
-config.winrm.username = "vagrant"
-config.winrm.password = "vagrant"
-config.vm.network :forwarded_port, guest: 5985, host: 5985
+config.vm.network :forwarded_port, guest: 5985, host: 5985, id: "winrm", auto_correct: true
 ```
 
 Example:
 ```ruby
 Vagrant.configure("2") do |config|
-  
-  # Max time to wait for the guest to shutdown
-  config.windows.halt_timeout = 25
-  
-  # Admin user name and password
-  config.winrm.username = "vagrant"
-  config.winrm.password = "vagrant"
 
   # Configure base box parameters
   config.vm.box = "vagrant-windows2008r2"
@@ -102,7 +91,7 @@ Vagrant.configure("2") do |config|
 
   # Port forward WinRM and RDP
   config.vm.network :forwarded_port, guest: 3389, host: 3389
-  config.vm.network :forwarded_port, guest: 5985, host: 5985
+  config.vm.network :forwarded_port, guest: 5985, host: 5985, id: "winrm", auto_correct: true
   
 end
 ````
