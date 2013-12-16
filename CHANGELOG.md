@@ -65,3 +65,6 @@
 - Added Vagrant 1.4.0 support, added VBox synced folder monkey patch for Vagrant 1.4
 - Fixed issue 149 - Added documentation about auto_correct for winrm port
 - Fixed issue 152 - Chef task fails when password contains $
+
+1.5.0
+- Support for Parallels 8/9 VMs via vagrant-parallels plugin.
