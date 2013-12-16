@@ -25,7 +25,14 @@ module VagrantWindows
     def is_vmware?()
       @machine.provider_name.to_s().start_with?('vmware')
     end
-    
+
+    # Checks to see if the machine is using Parallels Desktop.
+    #
+    # @return [Boolean]
+    def is_parallels?()
+      @machine.provider_name.to_s().start_with?('parallels')
+    end
+
     # Checks to see if the machine is using Oracle VirtualBox.
     #
     # @return [Boolean]

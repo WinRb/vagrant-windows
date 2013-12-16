@@ -12,7 +12,11 @@ module VagrantWindows
         def self.mount_vmware_shared_folder(machine, name, guestpath, options)
           mount_shared_folder(machine, name, guestpath, "\\\\vmware-host\\Shared Folders\\")
         end
-        
+
+        def self.mount_parallels_shared_folder(machine, name, guestpath, options)
+          mount_shared_folder(machine, name, guestpath, "\\\\psf\\")
+        end
+
         protected
         
         def self.mount_shared_folder(machine, name, guestpath, vm_provider_unc_base)

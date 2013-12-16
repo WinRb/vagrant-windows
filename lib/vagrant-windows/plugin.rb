@@ -92,7 +92,11 @@ module VagrantWindows
         require_relative "guest/cap/mount_shared_folder"
         VagrantWindows::Guest::Cap::MountSharedFolder
       end
-    
+
+      guest_capability(:windows, :mount_parallels_shared_folder) do
+        require_relative "guest/cap/mount_shared_folder"
+        VagrantWindows::Guest::Cap::MountSharedFolder
+      end
     end
 
     # This initializes the internationalization strings.
