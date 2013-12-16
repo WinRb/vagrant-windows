@@ -34,8 +34,11 @@ module VagrantWindows
       end
       
       def mount_shared_folder(name, guestpath, options)
-        if @windows_machine.is_vmware?() then
+        if @windows_machine.is_vmware?
           VagrantWindows::Guest::Cap::MountSharedFolder.mount_vmware_shared_folder(
+            @machine, name, guestpath, options)
+        elsif @windows_machine.is_parallels?
+          VagrantWindows::Guest::Cap::MountSharedFolder.mount_parallels_shared_folder(
             @machine, name, guestpath, options)
         else
           VagrantWindows::Guest::Cap::MountSharedFolder.mount_virtualbox_shared_folder(
