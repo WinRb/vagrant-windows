@@ -147,7 +147,7 @@ Note - You need to ensure you specify a config.windows and a config.winrm in you
 - The SQL Server installer uses a lot of resources, ensure WinRM Quota Management is properly configured to give it enough resources.
 - See [COOK-1172](http://tickets.opscode.com/browse/COOK-1172) and http://stackoverflow.com/a/15235996/82906 for more information.
 
-If all else fails try running [vagrant with debug logging](http://docs.vagrantup.com/v2/debugging.html), perhaps that will give
+If all else fails try running [vagrant with debug logging](http://docs.vagrantup.com/v2/other/debugging.html), perhaps that will give
 you enough insight to fix the problem or file an issue.
 
 
