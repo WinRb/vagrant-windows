@@ -18,7 +18,7 @@ module VagrantWindows
       def initialize(machine)
         @windows_machine = VagrantWindows::WindowsMachine.new(machine)
         @winrm_shell_factory = WinRMShellFactory.new(@windows_machine, WinRMFinder.new(@windows_machine))
-        
+
         @logger = Log4r::Logger.new("vagrant_windows::communication::winrmcommunicator")
         @logger.debug("initializing WinRMCommunicator")
       end
@@ -32,11 +32,15 @@ module VagrantWindows
 
         @logger.info("WinRM is ready!")
         return true
-        
+
       rescue Vagrant::Errors::VagrantError => e
         # We catch a `VagrantError` which would signal that something went
         # wrong expectedly in the `connect`, which means we didn't connect.
         @logger.info("WinRM not up: #{e.inspect}")
+        # We reset the shell to trigger calling of winrm_finder again.
+        # This resolves a problem when using vSphere where the ssh_info was not refreshing
+        # thus never getting the correct hostname.
+        @winrmshell = nil
         return false
       end
       
