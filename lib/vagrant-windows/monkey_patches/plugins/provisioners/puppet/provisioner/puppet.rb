@@ -94,7 +94,7 @@ module VagrantPlugins
         def configure_on_windows(root_config)
           # Calculate the paths we're going to use based on the environment
           root_path = @machine.env.root_path
-          @expanded_manifests_path = @config.expanded_manifests_path(root_path)
+          @expanded_manifests_path = Pathname.new(@config.manifests_path[1]).expand_path(root_path)
           @expanded_module_paths   = @config.expanded_module_paths(root_path)
           @manifest_file           = File.join(manifests_guest_path, @config.manifest_file)
 
