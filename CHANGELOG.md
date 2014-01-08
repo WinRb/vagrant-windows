@@ -68,3 +68,7 @@
 
 1.5.0
 - Support for Parallels 8/9 VMs via vagrant-parallels plugin.
+
+1.5.1
+- Fixed issue 158 - Vagrant 1.4 broke the Puppet provisioner monkey patch. Removed configure method monkey patch.
+- Fixed issue 162 - Set plugin name to 'vagrant-windows' to support has_plugin? method works.
