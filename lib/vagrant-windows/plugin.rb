@@ -43,11 +43,8 @@ require_relative "monkey_patches/plugins/provisioners/shell/provisioner"
 
 module VagrantWindows
   class Plugin < Vagrant.plugin("2")
-    name "Windows guest"
-    description <<-DESC
-    This plugin installs a provider that allows Vagrant to manage
-    Windows machines as guests.
-    DESC
+    name "vagrant-windows"
+    description "This plugin allows Vagrant to manage Windows guests."
 
     config(:windows) do
       require_relative "config/windows"
