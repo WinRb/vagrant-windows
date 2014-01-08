@@ -72,3 +72,4 @@
 1.5.1
 - Fixed issue 158 - Vagrant 1.4 broke the Puppet provisioner monkey patch. Removed configure method monkey patch.
 - Fixed issue 162 - Set plugin name to 'vagrant-windows' to support has_plugin? method works.
+- Reset winrmshell on error. When using the vSphere provider the hostname would not resolve.
