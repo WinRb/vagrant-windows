@@ -43,7 +43,7 @@ require_relative "monkey_patches/plugins/provisioners/shell/provisioner"
 
 module VagrantWindows
   class Plugin < Vagrant.plugin("2")
-    name "Windows guest"
+    name "vagrant-windows"
     description <<-DESC
     This plugin installs a provider that allows Vagrant to manage
     Windows machines as guests.
