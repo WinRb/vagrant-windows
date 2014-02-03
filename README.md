@@ -48,6 +48,13 @@ These commands assume you're running from a regular command window and not Power
    sc config WinRM start= auto
 ```
 
+__NOTE:__ For the WinRM service to work in Windows 7, the network profile has to be changed from Public to Work. To ensure that networks added later (i.e. through the Vagrantfile) also are made non-public, do the following:
+
+ 1. Run ```secpol.msc```
+ 2. Click *Network List Manager Policies*
+ 3. Double-click *Unidentified Networks*
+ 4. Change *Location Type* to *Private*
+
 #### Additional WinRM 1.1 Configuration
 
 These additional configuration steps are specific to Windows Server 2008 (WinRM 1.1). For Windows Server 2008 R2, Windows 7 and later versions of Windows you can ignore this section.
