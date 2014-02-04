@@ -18,6 +18,13 @@ module VagrantWindows
       @machine = machine
       @logger = Log4r::Logger.new("vagrant_windows::windows_machine")
     end
+
+    # Returns true if this Vagrant machine is a Windows guest, otherwise false.
+    #
+    # @return [Boolean]
+    def is_windows?()
+      WindowsMachine.is_windows?(@machine)
+    end
     
     # Checks to see if the machine is using VMWare Fusion or Workstation.
     #
@@ -53,6 +60,12 @@ module VagrantWindows
     # @return [WinRMShell]
     def winrmshell()
       @machine.communicate.winrmshell
+    end
+
+    # Re-establishes our symbolic links if they were created between now and a reboot
+    # Fixes issue #119
+    def reinitialize_network_shares()
+      winrmshell.powershell('& net use a-non-existant-share')
     end
 
     # Reads the machine's MAC addresses keyed by interface index.
