@@ -35,7 +35,6 @@ module VagrantPlugins
           command_builder = ::VagrantWindows::Provisioners::ChefCommandBuilder.new(
             @windows_machine, @config, :solo)
           
-          command_builder.prepare_for_chef_run()
           command = command_builder.run_chef_command()
           ###################### END - monkey patched code ####################
 
