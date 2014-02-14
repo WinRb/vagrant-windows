@@ -77,6 +77,14 @@ module VagrantWindows
         EOH
       end
 
+      def download(from, to)
+        @logger.debug("Downloading: #{from} to #{to}")
+        output = powershell("[System.convert]::ToBase64String([System.IO.File]::ReadAllBytes(\"#{from}\"))")
+        contents = output[:data].map!{|line| line[:stdout]}.join.gsub("\\n\\r", '')
+        out = Base64.decode64(contents)
+        IO.binwrite(to, out)
+      end
+
       protected
       
       def execute_shell(command, shell=:powershell, &block)
