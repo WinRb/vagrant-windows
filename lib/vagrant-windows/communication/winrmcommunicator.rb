@@ -75,8 +75,9 @@ module VagrantWindows
         winrmshell.upload(from, to)
       end
       
-      def download(from, to=nil)
-        @logger.warn("Downloading: #{from} to #{to} not supported on Windows guests")
+      def download(from, to)
+        @logger.debug("Downloading: #{from} to #{to}")
+        winrmshell.download(from, to)
       end
       
       def winrmshell=(winrmshell)
