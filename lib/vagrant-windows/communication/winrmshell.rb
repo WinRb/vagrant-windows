@@ -2,6 +2,7 @@ require 'timeout'
 require 'log4r'
 require 'winrm'
 require 'vagrant/util/retryable'
+require_relative 'linux_command_filter'
 require_relative '../errors'
 
 module VagrantWindows
@@ -43,9 +44,12 @@ module VagrantWindows
         @password = password
         @timeout_in_seconds = options[:timeout_in_seconds] || 60
         @max_tries = options[:max_tries] || 20
+        @command_filter = VagrantWindows::Communication::LinuxCommandFilter.new()
       end
       
       def powershell(command, &block)
+        command = command_filter.filter(command)
+        return { :exitcode => 0, :stdout => '', :stderr => '' } if (command == '')
         execute_shell(command, :powershell, &block)
       end
       
@@ -89,33 +93,6 @@ module VagrantWindows
       
       def execute_shell(command, shell=:powershell, &block)
         raise Errors::WinRMInvalidShell, :shell => shell unless shell == :cmd || shell == :powershell
-
-        if (command.start_with?('chmod') || command.start_with?('chown'))
-          return { :exitcode => 0, :stdout => '', :stderr => '' }
-        end
-
-        if (command.start_with?('mkdir'))
-          command.sub!('-p ', '')
-        end
-
-        if (command.start_with?('which'))
-          executable = command.strip.split(/\s+/)[1]
-          command = <<-EOH
-            $command = [Array](Get-Command #{executable} -errorAction SilentlyContinue)
-            if ($null -eq $command) { exit 1 }
-            write-host $command[0].Definition
-            exit 0
-          EOH
-        end
-
-        if (command.start_with?('test'))
-          path = command.strip.split(/\s+/)[2]
-          command = <<-EOH
-            if (Test-Path "#{path}") { exit 0 }
-            exit 1
-          EOH
-        end
-
         begin
           execute_shell_with_retry(command, shell, &block)
         rescue => e
