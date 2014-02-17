@@ -51,6 +51,10 @@ describe VagrantWindows::Communication::LinuxCommandFilter, :unit => true do
       expect(@filter.filter('test -L /tmp/link')).to eq("if (Test-Path '/tmp/link') { exit 0 } exit 1")
     end
 
+   it "should not convert compatible PS command"  do
+      expect(@filter.filter('ls /tmp/dir')).to eq("ls /tmp/dir")
+    end
+
   end
     
 end
