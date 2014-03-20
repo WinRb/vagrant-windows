@@ -37,6 +37,20 @@ describe VagrantWindows::WindowsMachine , :unit => true do
       expect(windows_machine.is_virtualbox?()).to be_false
     end
   end
+
+  describe "is_parallels?" do
+    it "should be true for parallels" do
+      machine = stub(:provider_name => :parallels)
+      windows_machine = VagrantWindows::WindowsMachine.new(machine)
+      expect(windows_machine.is_parallels?()).to be_true
+    end
+    
+    it "should be false for vmware_workstation" do
+      machine = stub(:provider_name => :vmware_workstation)
+      windows_machine = VagrantWindows::WindowsMachine.new(machine)
+      expect(windows_machine.is_parallels?()).to be_false
+    end
+  end
   
   describe "is_windows?" do
     it "should return true when config vm guest is windows" do
@@ -45,12 +59,28 @@ describe VagrantWindows::WindowsMachine , :unit => true do
       machine = stub(:config => config)
       expect(VagrantWindows::WindowsMachine.is_windows?(machine)).to be_true
     end
+
+    it "instance should return true when config vm guest is windows" do
+      vm = stub(:guest => :windows)
+      config = stub(:vm => vm)
+      machine = stub(:config => config)
+      windows_machine = VagrantWindows::WindowsMachine.new(machine)
+      expect(windows_machine.is_windows?()).to be_true
+    end
     
     it "should return false when config vm guest is not windows" do
       vm = stub(:guest => :ubuntu)
       config = stub(:vm => vm)
       machine = stub(:config => config)
       expect(VagrantWindows::WindowsMachine.is_windows?(machine)).to be_false
+    end
+
+    it "instance should return false when config vm guest is not windows" do
+      vm = stub(:guest => :fedora)
+      config = stub(:vm => vm)
+      machine = stub(:config => config)
+      windows_machine = VagrantWindows::WindowsMachine.new(machine)
+      expect(windows_machine.is_windows?()).to be_false
     end
   end
   
