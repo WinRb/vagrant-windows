@@ -1,4 +1,4 @@
-$adapters = get-ciminstance win32_networkadapter -filter "macaddress is not null" 
+$adapters = get-ciminstance win32_networkadapter -filter "macaddress is not null and netconnectionid is not null" 
 $processed = @()
 foreach ($adapter in $adapters) {
   $Processed += new-object PSObject -Property @{
