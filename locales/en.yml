@@ -24,3 +24,10 @@ en:
         Password: %{password}
         Endpoint: %{endpoint}
         Message: %{message}
+
+      winrm_file_transfer_error: |-
+        Failed to transfer a file between the host and guest
+
+        From: %{from}
+        To: %{to}
+        Message: %{message}

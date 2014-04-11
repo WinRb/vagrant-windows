@@ -56,76 +56,9 @@ module VagrantWindows
       def wql(query)
         execute_wql(query)
       end
-      
-      def upload(from, to)
-        @logger.debug("Upload: #{from} -> #{to}")
-        if File.directory?(from)
-          Dir.glob(File.join(from, '**/*')) do |entry|
-            if !File.directory?(entry)
-              rel_path = File.dirname(entry[from.length, entry.length])
-              dest = File.join(to, rel_path, File.basename(entry))
-              upload_file(entry, dest)
-            end
-          end
-        else
-          upload_file(from, to)
-        end
-      end
 
-      def download(from, to)
-        @logger.debug("Downloading: #{from} -> #{to}")
-        output = powershell("[System.convert]::ToBase64String([System.IO.File]::ReadAllBytes(\"#{from}\"))")
-        contents = output[:data].map!{|line| line[:stdout]}.join.gsub("\\n\\r", '')
-        out = Base64.decode64(contents)
-        IO.binwrite(to, out)
-      end
 
       protected
-
-      # Uploads the given file, but only if the target file doesn't exist
-      # or its MD5 checksum doens't match the host's source checksum.
-      #
-      # @param [String] The source file path on the host
-      # @param [String] The destination file path on the guest
-      def upload_file(from, to)
-        if should_upload_file?(from, to)
-          @logger.debug("Uploading: #{to}")
-          File.open(from, 'rb') do |f|
-            begin
-              chunk = Base64.encode64(f.read(8000))
-              chunk.gsub!("\n", '')
-              powershell("Add-Content -Path \"#{to}\" -Encoding byte -Value ([System.Convert]::FromBase64String(\"#{chunk.chomp}\"))\r\n")
-            end until f.eof?
-          end
-        else
-          @logger.debug("Up to date: #{to}")
-        end
-      end
-
-      # Checks to see if the target file on the guest is missing or out of date.
-      #
-      # @param [String] The source file path on the host
-      # @param [String] The destination file path on the guest
-      # @return [Boolean] True if the file needs to be uploaded
-      def should_upload_file?(from, to)
-        local_md5 = Digest::MD5.file(from).hexdigest
-        cmd = <<-EOH
-          if (Test-Path '#{to}') {
-            $hash_algo = new-object -TypeName System.Security.Cryptography.MD5CryptoServiceProvider
-            $file = [System.IO.File]::Open('#{to}', [System.IO.Filemode]::Open, [System.IO.FileAccess]::Read)
-            $md5 = ([System.BitConverter]::ToString($hash_algo.ComputeHash($file))).Replace("-","").ToLower()
-            $file.Dispose()
-            if ($md5 -eq '#{local_md5}') {
-              exit 0
-            }
-            else {
-              rm #{to}
-            }
-          }
-          exit 1
-        EOH
-        powershell(cmd)[:exitcode] == 1
-      end
       
       def execute_shell(command, shell=:powershell, &block)
         raise Errors::WinRMInvalidShell, :shell => shell unless shell == :cmd || shell == :powershell
