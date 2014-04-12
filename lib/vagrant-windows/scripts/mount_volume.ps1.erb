@@ -9,10 +9,22 @@ $MountPoint = [System.IO.Path]::GetFullPath("<%= options[:mount_point] %>")
 $ShareName = "<%= options[:share_name] %>"
 $VmProviderUncPath = "<%= options[:vm_provider_unc_path] %>"
 
+$smbUsername = "<%= options[:username] %>"
+$smbPassword = "<%= options[:password] %>"
+
 # https://github.com/BIAINC/vagrant-windows/issues/4
 # Not sure why this works, but it does.
 
-& net use $ShareName 2>&1 | Out-Null
+if($smbUsername -and $smbPassword) {
+  & net use "$VmProviderUncPath" "/user:$smbUsername" "$smbPassword" 2>&1 | Out-Null
+} else {
+  & net use "$VmProviderUncPath" 2>&1 | Out-Null
+}
+if ( $LASTEXITCODE -ne 0 )
+  {
+    Write-Error "Failed to mount network share $ShareName from $VmProviderUncPath (Using username: $smbUsername)"
+    exit 1
+  }
 
 Write-Debug "Attempting to mount $ShareName to $MountPoint"
 if( (Test-Path "$MountPoint") -and (Test-ReparsePoint "$MountPoint") )
