@@ -22,11 +22,7 @@ module VagrantWindows
       def upload(host_src_file_path, guest_dest_file_path)
         @logger.debug("Upload: #{host_src_file_path} -> #{guest_dest_file_path}")
         if File.directory?(host_src_file_path)
-          glob_patt = File.join(host_src_file_path, '**/*')
-          Dir.glob(glob_patt).select { |f| !File.directory?(f) }.each do |host_file_path|
-            guest_file_path = guest_file_path(host_src_file_path, guest_dest_file_path, host_file_path)
-            upload_file(host_file_path, guest_file_path)
-          end
+          upload_directory(host_src_file_path, guest_dest_file_path)
         else
           upload_file(host_src_file_path, guest_dest_file_path)
         end
@@ -48,15 +44,16 @@ module VagrantWindows
 
       private
 
-      # Creates a guest file path equivalent from a host file path
+      # Recursively uploads the given directory from the host to the guest
       #
-      # @param [String] The base host directory we're going to copy from
-      # @param [String] The base guest directory we're going to copy to
-      # @param [String] A full path to a file on the host underneath host_base_dir
-      # @return [String] The guest file path equivalent
-      def guest_file_path(host_base_dir, guest_base_dir, host_file_path)
-        rel_path = File.dirname(host_file_path[host_base_dir.length, host_file_path.length])
-        File.join(guest_base_dir, rel_path, File.basename(host_file_path))
+      # @param [String] The source file or directory path on the host
+      # @param [String] The destination file or directory path on the host
+      def upload_directory(host_src_file_path, guest_dest_file_path)
+        glob_patt = File.join(host_src_file_path, '**/*')
+        Dir.glob(glob_patt).select { |f| !File.directory?(f) }.each do |host_file_path|
+          guest_file_path = guest_file_path(host_src_file_path, guest_dest_file_path, host_file_path)
+          upload_file(host_file_path, guest_file_path)
+        end
       end
 
       # Uploads the given file, but only if the target file doesn't exist
@@ -139,6 +136,17 @@ module VagrantWindows
           exit 1
         EOH
         @winrm_shell.powershell(cmd)[:exitcode] == 1
+      end
+
+      # Creates a guest file path equivalent from a host file path
+      #
+      # @param [String] The base host directory we're going to copy from
+      # @param [String] The base guest directory we're going to copy to
+      # @param [String] A full path to a file on the host underneath host_base_dir
+      # @return [String] The guest file path equivalent
+      def guest_file_path(host_base_dir, guest_base_dir, host_file_path)
+        rel_path = File.dirname(host_file_path[host_base_dir.length, host_file_path.length])
+        File.join(guest_base_dir, rel_path, File.basename(host_file_path))
       end
 
       def guest_temp_dir
