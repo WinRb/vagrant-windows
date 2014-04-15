@@ -100,7 +100,8 @@ module VagrantWindows
             rm $dest_file_path
           }
           else {
-            New-Item -ItemType directory -Force -Path $dest_file_path
+            $dest_dir = ([System.IO.Path]::GetDirectoryName($dest_file_path))
+            New-Item -ItemType directory -Force -Path $dest_dir
           }
 
           $base64_string = Get-Content $tmp_file_path
@@ -157,7 +158,7 @@ module VagrantWindows
         raise Errors::WinRMFileTransferError,
           :from => from,
           :to => to,
-          :message => out[:data][0][:stderr] if out[:exitcode] != 0
+          :message => out.inspect if out[:exitcode] != 0
       end
     
     end #class
