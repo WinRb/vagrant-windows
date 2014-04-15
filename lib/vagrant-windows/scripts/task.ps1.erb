@@ -1,0 +1,74 @@
+# kill the task so we can recreate it
+schtasks /delete /tn "<%= options[:task_name] %>" /f 2>&1 | Out-Host
+
+# Ensure the task running file doesn't exist from a previous failure
+if (Test-Path "<%= options[:task_running] %>") {
+  del "<%= options[:task_running] %>"
+}
+
+if (Test-Path "<%= options[:task_exitcode] %>") {
+  del "<%= options[:task_exitcode] %>"
+}
+
+if (Test-Path "<%= options[:task_stdout_log] %>") {
+  del "<%= options[:task_stdout_log] %>"
+}
+
+if (Test-Path "<%= options[:task_stderr_log] %>") {
+  del "<%= options[:task_stderr_log] %>"
+}
+
+# schedule the task to run once in the far distant future
+schtasks /create /tn '<%= options[:task_name] %>' /xml '<%= options[:task_xml] %>' /ru '<%= options[:user] %>' /rp '<%= options[:pass] %>' | Out-Host
+
+# start the scheduled task right now
+schtasks /run /tn "<%= options[:task_name] %>" | Out-Host
+
+# wait for run_chef.ps1 to start or timeout after 1 minute
+$timeoutSeconds = 60
+$elapsedSeconds = 0
+while ( (!(Test-Path "<%= options[:task_running] %>") -and !(Test-Path "<%= options[:task_exitcode] %>")) -and ($elapsedSeconds -lt $timeoutSeconds) ) {
+  Start-Sleep -s 1
+  $elapsedSeconds++
+}
+
+if ($elapsedSeconds -ge $timeoutSeconds) {
+  Write-Error "Timed out waiting for scheduled task to start"
+  exit -2
+}
+
+# read the entire file, but only write out new lines we haven't seen before
+$numLinesRead = 0
+$success = $TRUE
+while ((Test-Path "<%= options[:task_running] %>") -and !(Test-Path "<%= options[:task_exitcode] %>")) {
+  Start-Sleep -m 100
+  
+  if (Test-Path "<%= options[:task_stdout_log] %>") {
+    $text = (get-content "<%= options[:task_stdout_log] %>")
+    $numLines = ($text | Measure-Object -line).lines    
+    $numLinesToRead = $numLines - $numLinesRead
+    
+    if ($numLinesToRead -gt 0) {
+      $text | select -first $numLinesToRead -skip $numLinesRead | ForEach {
+        Write-Host "$_"
+      }
+      $numLinesRead += $numLinesToRead
+    }
+  }
+}
+
+#Empty output buffer
+if (Test-Path "<%= options[:task_stdout_log] %>") {
+  $text = (get-content "<%= options[:task_stdout_log] %>")
+  $numLines = ($text | Measure-Object -line).lines    
+  $numLinesToRead = $numLines - $numLinesRead
+  
+  if ($numLinesToRead -gt 0) {
+    $text | select -first $numLinesToRead -skip $numLinesRead | ForEach {
+      Write-Host "$_"
+    }
+    $numLinesRead += $numLinesToRead
+  }
+}
+
+exit Get-Content "<%= options[:task_exitcode] %>"

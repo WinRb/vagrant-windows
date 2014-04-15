@@ -1,0 +1,18 @@
+$exitCode = -1
+Set-ExecutionPolicy Unrestricted -force;
+
+Try
+{
+  "running" | Out-File "<%= options[:task_running] %>"
+  $process = (Start-Process "<%= options[:task_binary_path] %>" -ArgumentList "<%= options[:task_arguments] %>" -NoNewWindow -PassThru -Wait -RedirectStandardOutput "<%= options[:task_stdout_log] %>" -RedirectStandardError "<%= options[:task_stderr_log] %>")
+  $exitCode = $process.ExitCode
+}
+Finally
+{
+  $exitCode | Out-File "<%= options[:task_exitcode] %>"
+  if (Test-Path "<%= options[:task_running] %>") {
+    del "<%= options[:task_running] %>"
+  }
+}
+
+exit $exitCode
