@@ -3,9 +3,9 @@ require 'spec_helper'
 describe VagrantWindows::Communication::GuestNetwork , :integration => true do
   
   before(:all) do
-    # This test requires you already have a running Windows Server 2008 R2 Vagrant VM
-    # Not ideal, but you have to start somewhere
-    @shell = VagrantWindows::Communication::WinRMShell.new("127.0.0.1", "vagrant", "vagrant")
+    port = (ENV['WINRM_PORT'] || 5985).to_i
+    @shell = VagrantWindows::Communication::WinRMShell.new(
+      "127.0.0.1", "vagrant", "vagrant", { port: port })
     @guestnetwork = VagrantWindows::Communication::GuestNetwork.new(@shell)
   end
   

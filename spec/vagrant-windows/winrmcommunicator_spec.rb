@@ -3,10 +3,10 @@ require 'spec_helper'
 describe VagrantWindows::Communication::WinRMCommunicator, :integration => true do
   
   before(:all) do
-    # This test requires you already have a running Windows Server 2008 R2 Vagrant VM
-    # Not ideal, but you have to start somewhere
     @communicator = VagrantWindows::Communication::WinRMCommunicator.new({})
-    @communicator.winrmshell = VagrantWindows::Communication::WinRMShell.new("127.0.0.1", "vagrant", "vagrant")
+    port = (ENV['WINRM_PORT'] || 5985).to_i
+    @communicator.winrmshell = VagrantWindows::Communication::WinRMShell.new(
+      "127.0.0.1", "vagrant", "vagrant", { port: port })
   end
   
   describe "execute" do
