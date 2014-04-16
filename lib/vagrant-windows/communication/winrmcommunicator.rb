@@ -72,13 +72,11 @@ module VagrantWindows
       end
 
       def upload(from, to)
-        file_manager = WinRMFileManager.new(winrmshell)
-        file_manager.upload(from, to)
+        winrmshell.upload(from, to)
       end
       
       def download(from, to)
-        file_manager = WinRMFileManager.new(winrmshell)
-        file_manager.download(from, to)
+        winrmshell.download(from, to)
       end
       
       def winrmshell=(winrmshell)

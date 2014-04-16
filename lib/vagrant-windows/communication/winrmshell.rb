@@ -57,6 +57,14 @@ module VagrantWindows
         execute_wql(query)
       end
 
+      def upload(from, to)
+        WinRMFileManager.new(self).upload(from, to)
+      end
+
+      def download(from, to)
+        WinRMFileManager.new(self).download(from, to)
+      end
+
 
       protected
       
