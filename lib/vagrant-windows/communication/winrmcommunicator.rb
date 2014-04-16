@@ -2,6 +2,7 @@ require 'timeout'
 require 'log4r'
 require_relative 'winrmshell_factory'
 require_relative 'winrmshell'
+require_relative 'winrmfilemanager'
 require_relative 'winrmfinder'
 require_relative '../errors'
 require_relative '../windows_machine'
@@ -71,12 +72,10 @@ module VagrantWindows
       end
 
       def upload(from, to)
-        @logger.debug("Uploading: #{from} to #{to}")
         winrmshell.upload(from, to)
       end
       
       def download(from, to)
-        @logger.debug("Downloading: #{from} to #{to}")
         winrmshell.download(from, to)
       end
       
@@ -87,7 +86,7 @@ module VagrantWindows
       def winrmshell
         @winrmshell ||= @winrm_shell_factory.create_winrm_shell()
       end
-      
+
       
       protected
       

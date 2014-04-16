@@ -3,10 +3,10 @@ require 'spec_helper'
 describe VagrantWindows::Communication::WinRMCommunicator, :integration => true do
   
   before(:all) do
-    # This test requires you already have a running Windows Server 2008 R2 Vagrant VM
-    # Not ideal, but you have to start somewhere
     @communicator = VagrantWindows::Communication::WinRMCommunicator.new({})
-    @communicator.winrmshell = VagrantWindows::Communication::WinRMShell.new("127.0.0.1", "vagrant", "vagrant")
+    port = (ENV['WINRM_PORT'] || 5985).to_i
+    @communicator.winrmshell = VagrantWindows::Communication::WinRMShell.new(
+      "127.0.0.1", "vagrant", "vagrant", { port: port })
   end
   
   describe "execute" do
@@ -41,6 +41,37 @@ describe VagrantWindows::Communication::WinRMCommunicator, :integration => true 
       end
       
       expect(uploaded_file_content.chomp).to eq("goodbye cruel world")
+    end
+
+    it "should recursively upload directories" do
+      # create a some test data
+      host_src_dir = Dir.mktmpdir("winrm_comm")
+
+      begin
+        IO.write(File.join(host_src_dir, 'root.txt'), "root\n")
+
+        subdir2 = File.join(host_src_dir, '/subdir1/subdir2')
+        FileUtils.mkdir_p(subdir2)
+
+        IO.write(File.join(subdir2, 'leaf1.txt'), "leaf1\n")
+        IO.write(File.join(subdir2, 'leaf2.txt'), "leaf2\n")
+
+        @communicator.upload(host_src_dir, '/winrm_comm') #c:\winrm_comm
+
+        @communicator.execute <<-EOH
+          function AssertExists($p) {
+            if (!(Test-Path $p)) {
+              exit 1
+            }
+          }
+
+          AssertExists 'c:/winrm_comm/root.txt'
+          AssertExists 'c:/winrm_comm/subdir1/subdir2/leaf2.txt'
+          AssertExists 'c:/winrm_comm/subdir1/subdir2/leaf1.txt'
+        EOH
+      ensure
+        FileUtils.remove_entry_secure host_src_dir
+      end
     end
   end
 

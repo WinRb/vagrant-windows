@@ -21,7 +21,11 @@ module VagrantWindows
     
     class WinRMAuthorizationError < VagrantWindowsError
       error_key(:winrm_auth_error)
-    end    
+    end
+
+    class WinRMFileTransferError < VagrantWindowsError
+      error_key(:winrm_file_transfer_error)
+    end
 
   end
 end
