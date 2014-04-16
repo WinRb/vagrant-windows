@@ -77,3 +77,6 @@
 1.6.0
 - Added chef-client provisioner support and extracted shared code from chef-solo provisioner
 - WinRM communicator download support
+
+1.7.0
+- Added recursive directory upload on communicator, similar to core Vagrant SCP functionality.
