@@ -46,7 +46,7 @@ describe VagrantWindows::Communication::WinRMCommunicator, :integration => true 
     it "should recursively upload directories" do
       # create a some test data
       host_src_dir = Dir.mktmpdir("winrm_comm")
-      puts host_src_dir
+
       begin
         IO.write(File.join(host_src_dir, 'root.txt'), "root\n")
 
