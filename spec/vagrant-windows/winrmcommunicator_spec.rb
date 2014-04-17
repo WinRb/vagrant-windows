@@ -28,15 +28,15 @@ describe VagrantWindows::Communication::WinRMCommunicator, :integration => true 
     it "should upload the file and overwrite it if it exists" do
       test_file = Tempfile.new("uploadtest")
       IO.write(test_file, "hello world")
-      @communicator.upload(test_file, "c:\\vagrantuploadtest.txt")
+      @communicator.upload(test_file, "c:/tmp/winrm-test/vagrantuploadtest.txt")
       
       # ensure we can overwrite
       IO.write(test_file, "goodbye cruel world")
-      @communicator.upload(test_file, "c:\\vagrantuploadtest.txt")
+      @communicator.upload(test_file, "c:/tmp/winrm-test/vagrantuploadtest.txt")
       
       # get the uploaded file's contents to ensure it uploaded properly
       uploaded_file_content = ''
-      @communicator.execute("cat c:\\vagrantuploadtest.txt", {}) do |type, line|
+      @communicator.execute("cat c:/tmp/winrm-test/vagrantuploadtest.txt", {}) do |type, line|
         uploaded_file_content = uploaded_file_content + line
       end
       
@@ -56,7 +56,7 @@ describe VagrantWindows::Communication::WinRMCommunicator, :integration => true 
         IO.write(File.join(subdir2, 'leaf1.txt'), "leaf1\n")
         IO.write(File.join(subdir2, 'leaf2.txt'), "leaf2\n")
 
-        @communicator.upload(host_src_dir, '/winrm_comm') #c:\winrm_comm
+        @communicator.upload(host_src_dir, '/tmp/winrm-test-upload') #c:\tmp\winrm-test-upload
 
         @communicator.execute <<-EOH
           function AssertExists($p) {
@@ -65,13 +65,31 @@ describe VagrantWindows::Communication::WinRMCommunicator, :integration => true 
             }
           }
 
-          AssertExists 'c:/winrm_comm/root.txt'
-          AssertExists 'c:/winrm_comm/subdir1/subdir2/leaf2.txt'
-          AssertExists 'c:/winrm_comm/subdir1/subdir2/leaf1.txt'
+          AssertExists 'c:/tmp/winrm-test-upload/root.txt'
+          AssertExists 'c:/tmp/winrm-test-upload/subdir1/subdir2/leaf2.txt'
+          AssertExists 'c:/tmp/winrm-test-upload/subdir1/subdir2/leaf1.txt'
         EOH
       ensure
         FileUtils.remove_entry_secure host_src_dir
       end
+    end
+  end
+
+  describe 'test' do
+    it "should return true if directory exists" do
+      @communicator.execute('mkdir -p /tmp/winrm-test/1')
+      expect(@communicator.test('test -d /tmp/winrm-test/1')).to be_true
+    end
+
+    it "should return false if directory does not exist" do
+      expect(@communicator.test('test -d /tmp/winrm-test/doesnotexit')).to be_false
+    end
+
+    it "should differentiate between directories and files" do
+      @communicator.execute('mkdir -p /tmp/winrm-test/2')
+      @communicator.execute('Add-Content /tmp/winrm-test/2/file.txt "The content"')
+      expect(@communicator.test('test -d /tmp/winrm-test/2/file.txt')).to be_false
+      expect(@communicator.test('test -f /tmp/winrm-test/2/file.txt')).to be_true
     end
   end
 
