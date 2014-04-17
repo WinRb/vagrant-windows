@@ -34,11 +34,8 @@ module VagrantPlugins
           end
 
           #################### START - monkey patched code ####################
-          command_builder = ::VagrantWindows::Provisioners::ChefCommandBuilder.new(
-            @windows_machine, @config, :client)
-          
-          command_builder.prepare_for_chef_run()
-          command = command_builder.run_chef_command()
+          command = ::VagrantWindows::Provisioners::ChefCommandBuilder.new(
+            @windows_machine, @config, :client).run_chef_command()
           ###################### END - monkey patched code ####################
 
           @config.attempts.times do |attempt|

@@ -32,11 +32,8 @@ module VagrantPlugins
         def run_chef_solo_on_windows
           
           #################### START - monkey patched code ####################
-          command_builder = ::VagrantWindows::Provisioners::ChefCommandBuilder.new(
-            @windows_machine, @config, :solo)
-          
-          command_builder.prepare_for_chef_run()
-          command = command_builder.run_chef_command()
+          command = ::VagrantWindows::Provisioners::ChefCommandBuilder.new(
+            @windows_machine, @config, :solo).run_chef_command()
           ###################### END - monkey patched code ####################
 
           @config.attempts.times do |attempt|
