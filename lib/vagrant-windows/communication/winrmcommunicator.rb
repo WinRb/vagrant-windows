@@ -63,10 +63,6 @@ module VagrantWindows
       
       def test(command, opts=nil)
         @logger.debug("Testing: #{command}")
-        
-        # HACK: to speed up Vagrant 1.2 OS detection, skip checking for *nix OS
-        return false unless (command =~ /^uname|^cat \/etc|^cat \/proc|grep 'Fedora/).nil?
-
         opts = { :error_check => false }.merge(opts || {})
         execute(command, opts) == 0
       end
@@ -94,7 +90,7 @@ module VagrantWindows
         if shell.eql? :cmd
           winrmshell.cmd(command, &block)[:exitcode]
         else
-          command = VagrantWindows.load_script("command_alias.ps1") << "\r\n" << command << "\r\nexit $LASTEXITCODE"
+          command << "\r\nexit $LASTEXITCODE"
           winrmshell.powershell(command, &block)[:exitcode]
         end
       end

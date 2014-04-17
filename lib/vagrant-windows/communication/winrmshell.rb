@@ -3,6 +3,7 @@ require 'log4r'
 require 'winrm'
 require 'vagrant/util/retryable'
 require_relative '../errors'
+require_relative 'linux_command_filter'
 
 module VagrantWindows
   module Communication
@@ -43,6 +44,7 @@ module VagrantWindows
         @password = password
         @timeout_in_seconds = options[:timeout_in_seconds] || 60
         @max_tries = options[:max_tries] || 20
+        @linux_cmd_filter = LinuxCommandFilter.new()
       end
       
       def powershell(command, &block)
@@ -70,10 +72,18 @@ module VagrantWindows
       
       def execute_shell(command, shell=:powershell, &block)
         raise Errors::WinRMInvalidShell, :shell => shell unless shell == :cmd || shell == :powershell
+        
+        # If this is a *nix specific command convert to a Windows cmd
+        # If not Windows equivalent exists, don't bother running it
+        win_friendly_cmd = @linux_cmd_filter.filter(command)
+        if (win_friendly_cmd.empty?)
+          return { :exitcode => 0, :stderr => '', :stdout => '' }
+        end
+
         begin
-          execute_shell_with_retry(command, shell, &block)
+          execute_shell_with_retry(win_friendly_cmd, shell, &block)
         rescue => e
-          raise_winrm_exception(e, shell, command)
+          raise_winrm_exception(e, shell, win_friendly_cmd)
         end
       end
       
