@@ -34,12 +34,19 @@ module VagrantPlugins
               end
               comm.upload(path.to_s, fixed_upload_path)
 
-              command = <<-EOH
-              $old = Get-ExecutionPolicy;
-              Set-ExecutionPolicy Unrestricted -force;
-              #{win_friendly_path(fixed_upload_path)}#{args};
-              Set-ExecutionPolicy $old -force
-              EOH
+              # if powershell script we need to bypass the execution policy
+              command = "#{win_friendly_path(fixed_upload_path)}#{args}"
+              command = "powershell -executionpolicy bypass -file #{command}" if
+                File.extname(fixed_upload_path).downcase == '.ps1'
+
+              # for priviliged scripts we need wrap it in a scheduled task
+              if config.privileged
+                command = VagrantWindows.load_script_template('elevated_shell.ps1', :options => {
+                  :command => command,
+                  :username => windows_machine.winrm_config.username,
+                  :password => windows_machine.winrm_config.password
+                })
+              end
               
               # Execute it with sudo
               comm.sudo(command) do |type, data|
