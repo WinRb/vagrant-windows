@@ -13,7 +13,9 @@ This [Vagrant](http://www.vagrantup.com/) plugin allows you to standup Windows g
 
 ## Installation
 
-- For Vagrant 1.1 and above execute `vagrant plugin install vagrant-windows`.
+Vagrant 1.6 will natively support Windows guests, this plugin should not be used with Vagrant 1.6 or later.
+
+- For Vagrant 1.1 -> 1.5 execute `vagrant plugin install vagrant-windows`.
 - For Vagrant 1.0 execute `vagrant plugin install vagrant-windows --plugin-version 0.1.2`.
 
 ## Creating a Base Box

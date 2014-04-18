@@ -80,3 +80,6 @@
 
 1.7.0
 - Added recursive directory upload on communicator, similar to core Vagrant SCP functionality.
+- Redesigned elevated command execution in Chef to make it reusable
+- Shell provisioner now runs elevated by default unless privileged is false
+- Removed *nix command alias PS script and created extensible linux command filter system
