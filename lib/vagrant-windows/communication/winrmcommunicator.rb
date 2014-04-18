@@ -4,6 +4,7 @@ require_relative 'winrmshell_factory'
 require_relative 'winrmshell'
 require_relative 'winrmfilemanager'
 require_relative 'winrmfinder'
+require_relative 'linux_command_filter'
 require_relative '../errors'
 require_relative '../windows_machine'
 
@@ -19,7 +20,7 @@ module VagrantWindows
       def initialize(machine)
         @windows_machine = VagrantWindows::WindowsMachine.new(machine)
         @winrm_shell_factory = WinRMShellFactory.new(@windows_machine, WinRMFinder.new(@windows_machine))
-
+        @linux_cmd_filter = LinuxCommandFilter.new()
         @logger = Log4r::Logger.new("vagrant_windows::communication::winrmcommunicator")
         @logger.debug("initializing WinRMCommunicator")
       end
@@ -46,14 +47,20 @@ module VagrantWindows
       end
       
       def execute(command, opts={}, &block)
+        # If this is a *nix command with no Windows equivilant, don't run it
+        win_friendly_cmd = @linux_cmd_filter.filter(command)
+        if (win_friendly_cmd.empty?)
+          return { :exitcode => 0, :stderr => '', :stdout => '' }
+        end
+
         opts = {
           :error_check => true,
           :error_class => VagrantWindows::Errors::WinRMExecutionError,
           :error_key   => :winrm_execution_error,
-          :command     => command,
+          :command     => win_friendly_cmd,
           :shell       => :powershell
         }.merge(opts || {})
-        exit_status = do_execute(command, opts[:shell], &block)
+        exit_status = do_execute(win_friendly_cmd, opts[:shell], &block)
         if opts[:error_check] && exit_status != 0
           raise_execution_error(opts, exit_status)
         end
@@ -62,9 +69,14 @@ module VagrantWindows
       alias_method :sudo, :execute
       
       def test(command, opts=nil)
-        @logger.debug("Testing: #{command}")
+        # If this is a *nix command with no Windows equivilant, don't run it
+        win_friendly_cmd = @linux_cmd_filter.filter(command)
+        if (win_friendly_cmd.empty?)
+          return false
+        end
+
         opts = { :error_check => false }.merge(opts || {})
-        execute(command, opts) == 0
+        execute(win_friendly_cmd, opts) == 0
       end
 
       def upload(from, to)
