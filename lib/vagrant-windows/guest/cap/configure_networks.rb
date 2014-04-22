@@ -16,7 +16,7 @@ module VagrantWindows
           @@logger.debug("networks: #{networks.inspect}")
           
           windows_machine = VagrantWindows::WindowsMachine.new(machine)
-          guest_network = VagrantWindows::Communication::GuestNetwork.new(windows_machine.winrmshell)
+          guest_network = VagrantWindows::Communication::GuestNetwork.new(machine.communicate)
           if windows_machine.is_vmware?()
             @@logger.warn('Configuring secondary network adapters through VMware is not yet supported.')
             @@logger.warn('You will need to manually configure the network adapter.')
