@@ -49,9 +49,7 @@ module VagrantWindows
       def execute(command, opts={}, &block)
         # If this is a *nix command with no Windows equivilant, don't run it
         win_friendly_cmd = @linux_cmd_filter.filter(command)
-        if (win_friendly_cmd.empty?)
-          return { :exitcode => 0, :stderr => '', :stdout => '' }
-        end
+        return 0 if win_friendly_cmd.empty?
 
         opts = {
           :error_check => true,
@@ -60,20 +58,21 @@ module VagrantWindows
           :command     => win_friendly_cmd,
           :shell       => :powershell
         }.merge(opts || {})
-        exit_status = do_execute(win_friendly_cmd, opts[:shell], &block)
-        if opts[:error_check] && exit_status != 0
-          raise_execution_error(opts, exit_status)
-        end
-        exit_status
+
+        win_friendly_cmd << "\r\nexit $LASTEXITCODE" if opts[:shell] == :powershell
+        output = winrmshell.send(opts[:shell], win_friendly_cmd, &block)
+
+        return output if opts[:shell] == :wql
+        exitcode = output[:exitcode]
+        raise_execution_error(opts, exitcode) if opts[:error_check] && exitcode != 0
+        exitcode
       end
       alias_method :sudo, :execute
       
       def test(command, opts=nil)
         # If this is a *nix command with no Windows equivilant, don't run it
         win_friendly_cmd = @linux_cmd_filter.filter(command)
-        if (win_friendly_cmd.empty?)
-          return false
-        end
+        return false if win_friendly_cmd.empty?
 
         opts = { :error_check => false }.merge(opts || {})
         execute(win_friendly_cmd, opts) == 0
@@ -97,15 +96,6 @@ module VagrantWindows
 
       
       protected
-      
-      def do_execute(command, shell, &block)
-        if shell.eql? :cmd
-          winrmshell.cmd(command, &block)[:exitcode]
-        else
-          command << "\r\nexit $LASTEXITCODE"
-          winrmshell.powershell(command, &block)[:exitcode]
-        end
-      end
       
       def raise_execution_error(opts, exit_code)
         # The error classes expect the translation key to be _key, but that makes for an ugly

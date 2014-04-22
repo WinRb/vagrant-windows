@@ -8,7 +8,7 @@ describe VagrantWindows::Communication::WinRMShell, :integration => true do
       "127.0.0.1", "vagrant", "vagrant", { port: port })
   end
   
-  describe "powershell" do
+  describe ".powershell" do
     it "should return exit code of 0" do
       expect(@shell.powershell("exit 0")[:exitcode]).to eq(0)
     end
@@ -26,13 +26,20 @@ describe VagrantWindows::Communication::WinRMShell, :integration => true do
     end
   end
   
-  describe "cmd" do
+  describe ".cmd" do
     it "should return stdout" do
       result = @shell.cmd("dir") do |type, line|
         expect(type).to eq(:stdout)
         expect(line.length).to be > 1  
       end
       expect(result[:exitcode]).to eq(0)
+    end
+  end
+
+  describe ".wql" do
+    it "should return query results in stdout" do
+      result = @shell.wql('SELECT * FROM Win32_NetworkAdapter WHERE MACAddress IS NOT NULL')
+      expect(result[:win32_network_adapter]).to_not be_empty
     end
   end
  
