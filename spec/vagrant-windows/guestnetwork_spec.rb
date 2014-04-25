@@ -2,11 +2,16 @@ require 'spec_helper'
 
 describe VagrantWindows::Communication::GuestNetwork , :integration => true do
   
-  before(:all) do
+  before(:each) do
     port = (ENV['WINRM_PORT'] || 5985).to_i
+
+    @machine = stub()
     @shell = VagrantWindows::Communication::WinRMShell.new(
       "127.0.0.1", "vagrant", "vagrant", { port: port })
-    @guestnetwork = VagrantWindows::Communication::GuestNetwork.new(@shell)
+
+    @communicator = VagrantWindows::Communication::WinRMCommunicator.new(@machine)
+    @communicator.winrmshell = @shell
+    @guestnetwork = VagrantWindows::Communication::GuestNetwork.new(@communicator)
   end
   
   describe "wsman_version" do
