@@ -3,7 +3,9 @@
 [![Code Climate](https://codeclimate.com/github/WinRb/vagrant-windows.png)](https://codeclimate.com/github/WinRb/vagrant-windows)
 [![Gem Version](https://badge.fury.io/rb/vagrant-windows.png)](http://badge.fury.io/rb/vagrant-windows)
 
-This [Vagrant](http://www.vagrantup.com/) plugin allows you to standup Windows guests using [WinRM](http://msdn.microsoft.com/en-us/library/aa384426\(v=vs.85\).aspx) instead of SSH. Additionally this plugin makes it easier to provision with Chef, Puppet, and the shell (PowerShell) on Windows guests.
+### This plugin is deprecated, please use [Vagrant 1.6+](http://www.vagrantup.com/downloads.html) which natively supports Windows guests over WinRM.
+
+This [Vagrant](http://www.vagrantup.com/) plugin allows you to standup Windows guests using [WinRM](http://msdn.microsoft.com/en-us/library/aa384426\(v=vs.85\).aspx) instead of SSH on older versions of Vagrant.
 
 ## Getting Started
 1. Install the vagrant-windows plugin.
