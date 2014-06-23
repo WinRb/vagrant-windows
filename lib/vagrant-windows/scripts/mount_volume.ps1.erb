@@ -4,20 +4,34 @@ function Test-ReparsePoint([string]$path) {
   return [bool]($file.Attributes -band [IO.FileAttributes]::ReparsePoint)
 }
 
-
 $MountPoint = [System.IO.Path]::GetFullPath("<%= options[:mount_point] %>")
 $ShareName = "<%= options[:share_name] %>"
 $VmProviderUncPath = "<%= options[:vm_provider_unc_path] %>"
 
+$smbUsername = "<%= options[:username] %>"
+$smbPassword = "<%= options[:password] %>"
+
 # https://github.com/BIAINC/vagrant-windows/issues/4
 # Not sure why this works, but it does.
 
-& net use $ShareName 2>&1 | Out-Null
+if($smbUsername -and $smbPassword) {
+  Write-Host "Saving credentials for username $smbUsername"
+  & cmdkey "/add:$(([System.Uri]$VmProviderUncPath).Authority)" "/user:$smbUsername" "/pass:$smbPassword" 2>&1 | Out-Null
+} 
+  
+Write-Host "Creating net share to $VmProviderUncPath for path $MountPoint"
+& net use "$VmProviderUncPath" /p:yes 2>&1 | Out-Null
 
-Write-Debug "Attempting to mount $ShareName to $MountPoint"
+if ( $LASTEXITCODE -ne 0 )
+  {
+    Write-Error "Failed to mount network share $ShareName from $VmProviderUncPath (Using username: $smbUsername)"
+    exit 1
+  }
+
+Write-Host "Attempting to mount $ShareName to $MountPoint"
 if( (Test-Path "$MountPoint") -and (Test-ReparsePoint "$MountPoint") )
 {
-  Write-Debug "Junction already exists, so I will delete it"
+  Write-Host "Junction already exists, so I will delete it"
   # Powershell refuses to delete junctions, oh well use cmd
   cmd /c rd "$MountPoint"
 
@@ -30,7 +44,7 @@ if( (Test-Path "$MountPoint") -and (Test-ReparsePoint "$MountPoint") )
 } 
 elseif(Test-Path $MountPoint) 
 {
-  Write-Debug "Mount point already exists and is not a symbolic link"
+  Write-Host "Mount point already exists and is not a symbolic link"
   exit 1
 }
 
@@ -38,7 +52,7 @@ $BaseDirectory = [System.IO.Path]::GetDirectoryName($MountPoint)
 
 if (-not (Test-Path $BaseDirectory))
 {
-  Write-Debug "Creating parent directory for mount point $BaseDirectory"
+  Write-Host "Creating parent directory for mount point $BaseDirectory"
   New-Item $BaseDirectory -Type Directory -Force | Out-Null
 }
 

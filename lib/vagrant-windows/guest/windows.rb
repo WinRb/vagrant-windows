@@ -40,6 +40,9 @@ module VagrantWindows
         elsif @windows_machine.is_parallels?
           VagrantWindows::Guest::Cap::MountSharedFolder.mount_parallels_shared_folder(
             @machine, name, guestpath, options)
+        elsif @windows_machine.is_hyperv?
+          VagrantWindows::Guest::Cap::MountSharedFolder.mount_smb_shared_folder(
+            @machine, name, guestpath, options)
         else
           VagrantWindows::Guest::Cap::MountSharedFolder.mount_virtualbox_shared_folder(
             @machine, name, guestpath, options)

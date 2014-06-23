@@ -47,6 +47,14 @@ module VagrantWindows
       @machine.provider_name.to_s().start_with?('virtualbox')
     end
     
+
+    # Checks to see if the machine is using Hyperv.
+    #
+    # @return [Boolean]
+    def is_hyperv?()
+      @machine.provider_name.to_s().start_with?('hyperv')
+    end
+    
     # Checks to see if the machine is rebooting or has a scheduled reboot.
     #
     # @return [Boolean] True if rebooting

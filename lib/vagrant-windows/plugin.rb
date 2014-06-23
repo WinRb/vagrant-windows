@@ -70,6 +70,11 @@ module VagrantWindows
         VagrantWindows::Guest::Cap::ChangeHostName
       end
 
+      guest_capability(:windows, :choose_addressable_ip_addr) do
+        require_relative "guest/cap/choose_addressable_ip_addr"
+        VagrantWindows::Guest::Cap::ChooseAddressableIPAddr
+      end
+
       guest_capability(:windows, :configure_networks) do
         require_relative "guest/cap/configure_networks"
         VagrantWindows::Guest::Cap::ConfigureNetworks
@@ -91,6 +96,11 @@ module VagrantWindows
       end
 
       guest_capability(:windows, :mount_parallels_shared_folder) do
+        require_relative "guest/cap/mount_shared_folder"
+        VagrantWindows::Guest::Cap::MountSharedFolder
+      end
+
+      guest_capability(:windows, :mount_smb_shared_folder) do
         require_relative "guest/cap/mount_shared_folder"
         VagrantWindows::Guest::Cap::MountSharedFolder
       end
