@@ -142,6 +142,19 @@ Note - You need to ensure you specify a config.windows and a config.winrm in you
    winrm set winrm/config/winrs '@{MaxMemoryPerShellMB="512"}'
 ```
 
+#### When using Windows-AWS vagrant hangs at  "Waiting for SSH to become available..." or when using --debug you see "INFO winrmshell: Attempting to connect to WinRM..." over and over again.  However, the aws instance was up an running.
+- You may need to run another command on the server ```winrm set winrm/config/service @{EnableCompatibilityHttpListener="true"}``` 
+- To verify this we used winrs on a client machine while the aws instance is running.  
+'''
+From Admin Command prompt run:
+set-item wsman:\localhost\Client\TrustedHosts -value "*" -force
+then
+winrs -r:http://<your public IP or DNS> -u:Administrator -p:<yourRDPPassword> ipconfig
+you will see the following response:
+Winrs error:The connection to the specified remote host was refused. Verify that the WS-Management service is running on the remote host and configured to listen for requests on the correct port and HTTP URL.PS
+'''
+- Some other things to check are that your firewall is open and that the AWS Security Group has ports open for 5985.  I recommend that you create the SG prior because I experienced an issue where when I opened the port after starting the instance it still did not work but when the SG was setup with the open ports prior the connection was successful.
+
 #### I get a 401 auth error from WinRM
 - Ensure you've followed the WinRM configuration instructions above.
 - Ensure you can manually login using the specified config.winrm.username you've specified in your Vagrantfile.
