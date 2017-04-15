@@ -55,7 +55,17 @@ module VagrantWindows
       require_relative "config/winrm"
       VagrantWindows::Config::WinRM
     end
-
+    
+    config(:reboot, :provisioner) do
+      require_relative "config/reboot"
+      VagrantWindows::Config::Reboot
+    end
+    
+    provisioner(:reboot) do
+      require_relative "provisioners/reboot"
+      VagrantWindows::Provisioners::Reboot
+    end
+    
     guest(:windows) do
       require_relative "guest/windows"
       VagrantWindows::Guest::Windows
